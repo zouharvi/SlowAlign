@@ -45,6 +45,8 @@ fn main() {
     let v1_len = vocab1.keys().len();
     let v2_len = vocab2.keys().len();
 
+    const CHUNK_SIZE: usize = 100000/8;
+
     // EM loop
     for step in 0..5 {
         eprintln!("step {}", step);
@@ -66,22 +68,35 @@ fn main() {
             }
         }
 
-        // maximization
-        for (sent_i, (s1, s2)) in sents.iter().enumerate() {
-            let sent_probs = &mut alignment_probs[sent_i];
-            for (pos1, word1) in s1.iter().enumerate() {
-                for (pos2, word2) in s2.iter().enumerate() {
-                    sent_probs[pos2][pos1] = word_probs[*word2][*word1];
-                }
+        let _ = crossbeam::scope(|scope| {
+            // chop alignment_probs into disjoint sub-slices
+            for (chunk_i, alignment_probs_slice) in alignment_probs.chunks_mut(CHUNK_SIZE).enumerate() {
+                // shadow variables so that they are taken as immutable references
+                let sents = &sents;
+                let word_probs = &word_probs;
+                scope.spawn(move |_| {
+                    // maximization
+                    for (sent_i, (s1, s2)) in sents[chunk_i*CHUNK_SIZE..(chunk_i+1)*CHUNK_SIZE].iter().enumerate() {
+                        let sent_probs = &mut alignment_probs_slice[sent_i];
+                        for (pos1, word1) in s1.iter().enumerate() {
+                            for (pos2, word2) in s2.iter().enumerate() {
+                                sent_probs[pos2][pos1] = word_probs[*word2][*word1];
+                            }
+                        }
+                        // normalize columns
+                        for (pos1, _) in s1.iter().enumerate() {
+                            let sum = sent_probs
+                                .iter()
+                                .map(|tgt_probs| tgt_probs[pos1])
+                                .sum::<f32>();
+                            for tgt_probs in sent_probs.iter_mut() {
+                                tgt_probs[pos1] /= sum;
+                            }
+                        }
+                    }
+                });
             }
-            // normalize columns
-            for (pos1, _) in s1.iter().enumerate() {
-                let sum = sent_probs.iter().map(|tgt_probs| tgt_probs[pos1]).sum::<f32>();
-                for tgt_probs in sent_probs.iter_mut() {
-                    tgt_probs[pos1] /= sum;
-                }
-            }
-        }
+        });
     }
 
     // compute alignments, complicated way to get argmax
@@ -94,7 +109,7 @@ fn main() {
                     .enumerate()
                     .max_by(|(_, value0), (_, value1)| value0.partial_cmp(value1).unwrap())
                     .map(|(idx, _)| idx)
-                    .unwrap()
+                    .unwrap(),
             )
         })
     });
