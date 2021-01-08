@@ -1,4 +1,4 @@
-# RustAlign
+# FasterAlign
 
 Word aligner written in Rust with features:
 
