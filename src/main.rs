@@ -13,8 +13,11 @@ fn main() {
     let mut sents = Vec::<(Vec<usize>, Vec<usize>)>::new();
     let mut vocab1 = HashMap::<String, usize>::new();
     let mut vocab2 = HashMap::<String, usize>::new();
+    const SENT_COUNT: usize = 100000;
+    const CHUNK_COUNT: usize = 2;
+    const CHUNK_SIZE: usize = SENT_COUNT / CHUNK_COUNT;
 
-    for (line1, line2) in reader1.lines().zip(reader2.lines()).take(100000) {
+    for (line1, line2) in reader1.lines().zip(reader2.lines()).take(SENT_COUNT) {
         let line1 = line1.unwrap();
         let line2 = line2.unwrap();
         let tokens1 = line1
@@ -45,38 +48,63 @@ fn main() {
     let v1_len = vocab1.keys().len();
     let v2_len = vocab2.keys().len();
 
-    const CHUNK_SIZE: usize = 100000/8;
-
     // EM loop
     for step in 0..5 {
         eprintln!("step {}", step);
 
-        // expectation
         let mut word_probs = vec![vec![0.0; v1_len]; v2_len];
-        for ((s1, s2), probs) in sents.iter().zip(alignment_probs.iter()) {
-            for (word_tgt, probs_tgt) in s2.iter().zip(probs.iter()) {
-                for (word_src, partial_count) in s1.iter().zip(probs_tgt) {
-                    word_probs[*word_tgt][*word_src] += *partial_count as f32;
+        let _ = crossbeam::scope(|scope| {
+            let sents = &sents;
+            let alignment_probs = &alignment_probs;
+            // expectation
+            let word_probs_partial = (0..CHUNK_COUNT).into_iter().map(|chunk_i| {
+                scope.spawn(move |_| {
+                    let mut word_probs_local = vec![vec![0.0; v1_len]; v2_len];
+                    for ((s1, s2), probs) in sents[chunk_i*CHUNK_SIZE..(chunk_i+1)*CHUNK_SIZE].iter().zip(alignment_probs[chunk_i*CHUNK_SIZE..(chunk_i+1)*CHUNK_SIZE].iter()) {
+                        for (word_tgt, probs_tgt) in s2.iter().zip(probs.iter()) {
+                            for (word_src, partial_count) in s1.iter().zip(probs_tgt) {
+                                word_probs_local[*word_tgt][*word_src] += *partial_count as f32;
+                            }
+                        }
+                    }
+
+                    word_probs_local
+                })
+            });
+
+            for word_probs_partial in word_probs_partial {
+                let word_probs_partial = word_probs_partial.join().unwrap();
+                for (row_i, row) in word_probs_partial.iter().enumerate() {
+                    for (col_i, prob) in row.iter().enumerate() {
+                        word_probs[row_i][col_i] += prob;
+                    }
                 }
             }
-        }
-        // normalize rows
-        for word_prob in word_probs.iter_mut() {
-            let sum = word_prob.iter().sum::<f32>();
-            for prob in word_prob.iter_mut() {
-                *prob /= sum;
+
+            // normalize rows
+            for word_prob in word_probs.iter_mut() {
+                let sum = word_prob.iter().sum::<f32>();
+                for prob in word_prob.iter_mut() {
+                    *prob /= sum;
+                }
             }
-        }
+        });
 
         let _ = crossbeam::scope(|scope| {
             // chop alignment_probs into disjoint sub-slices
-            for (chunk_i, alignment_probs_slice) in alignment_probs.chunks_mut(CHUNK_SIZE).enumerate() {
+            for (chunk_i, alignment_probs_slice) in
+                alignment_probs.chunks_mut(CHUNK_SIZE).enumerate()
+            {
                 // shadow variables so that they are taken as immutable references
                 let sents = &sents;
                 let word_probs = &word_probs;
                 scope.spawn(move |_| {
                     // maximization
-                    for (sent_i, (s1, s2)) in sents[chunk_i*CHUNK_SIZE..(chunk_i+1)*CHUNK_SIZE].iter().enumerate() {
+                    for (sent_i, (s1, s2)) in sents
+                        [chunk_i * CHUNK_SIZE..(chunk_i + 1) * CHUNK_SIZE]
+                        .iter()
+                        .enumerate()
+                    {
                         let sent_probs = &mut alignment_probs_slice[sent_i];
                         for (pos1, word1) in s1.iter().enumerate() {
                             for (pos2, word2) in s2.iter().enumerate() {
