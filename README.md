@@ -12,4 +12,4 @@ Word aligner written in Rust with features:
 
 # SlowAlignDisplayer
 
-For an easy to use displayer of word alignment, see (https://github.com/zouharvi/SlowAlignDisplayer)[SlowAlignDisplayer].
+For an easy to use displayer of word alignment, see [SlowAlignDisplayer](https://github.com/zouharvi/SlowAlignDisplayer).
