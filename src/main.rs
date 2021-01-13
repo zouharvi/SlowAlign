@@ -14,28 +14,27 @@ fn main() {
     let file2 = File::open(Path::new("data/hansards.f")).unwrap();
     let reader1 = BufReader::new(file1);
     let reader2 = BufReader::new(file2);
+    
     let mut sents = Vec::<(Vec<usize>, Vec<usize>)>::with_capacity(SENT_COUNT);
-    let mut vocab1 = HashMap::<String, usize>::new();
-    let mut vocab2 = HashMap::<String, usize>::new();
+    // TODO: undocumented heuristic allocation
+    let mut vocab1 = HashMap::<String, usize>::with_capacity(SENT_COUNT / 2);
+    let mut vocab2 = HashMap::<String, usize>::with_capacity(SENT_COUNT / 2);
+
     for (line1, line2) in reader1.lines().zip(reader2.lines()).take(SENT_COUNT) {
         let line1 = line1.unwrap();
         let line2 = line2.unwrap();
         let tokens1 = line1
             .split_whitespace()
             .map(|token| {
-                if !vocab1.contains_key(token) {
-                    vocab1.insert(token.to_string(), vocab1.keys().len());
-                }
-                *vocab1.get(token).unwrap()
+                let len = vocab1.len();
+                *vocab1.entry(token.to_string()).or_insert(len)
             })
             .collect();
         let tokens2 = line2
             .split_whitespace()
             .map(|token| {
-                if !vocab2.contains_key(token) {
-                    vocab2.insert(token.to_string(), vocab2.keys().len());
-                }
-                *vocab2.get(token).unwrap()
+                let len = vocab2.len();
+                *vocab2.entry(token.to_string()).or_insert(len)
             })
             .collect();
         sents.push((tokens1, tokens2));
@@ -44,12 +43,14 @@ fn main() {
         .iter()
         .map(|(s1, s2)| vec![vec![1.0 / (s1.len() as f32); s1.len()]; s2.len()])
         .collect::<Vec<Vec<Vec<f32>>>>();
-    let v1_len = vocab1.keys().len();
-    let v2_len = vocab2.keys().len();
+    let v1_len = vocab1.len();
+    let v2_len = vocab2.len();
     let m_chunks: usize = v1_len / M_THREADS;
+
     // EM loop
     for step in 0..5 {
         eprintln!("step {}", step);
+
         // expectation
         let mut word_probs = vec![vec![0.0; v1_len]; v2_len];
         for ((s1, s2), probs) in sents.iter().zip(alignment_probs.iter()) {
