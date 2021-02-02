@@ -5,7 +5,7 @@ const E_THREADS: usize = 8;
 const M_THREADS: usize = 8;
 
 pub fn ibm1(
-    sents: &Vec<(Vec<usize>, Vec<usize>)>,
+    sents: &[(Vec<usize>, Vec<usize>)],
     vocab1: &HashMap<String, usize>,
     vocab2: &HashMap<String, usize>,
 ) -> Vec<Vec<Vec<f32>>> {
