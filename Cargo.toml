@@ -1,5 +1,5 @@
 [package]
-name = "faster_align"
+name = "slow_align"
 version = "0.1.0"
 authors = ["Vilém Zouhar <vilem.zouhar@gmail.com>"]
 edition = "2018"
