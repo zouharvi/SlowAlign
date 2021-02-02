@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 
-pub type AlgnHard = Vec<HashSet<(usize, usize)>>;
-pub type AlgnSoft = Vec<Vec<Vec<f32>>>;
-pub type AlgnGold = Vec<(HashSet<(usize, usize)>, HashSet<(usize, usize)>)>;
+pub type AlgnHard = HashSet<(usize, usize)>;
+pub type AlgnSoft = Vec<Vec<f32>>;
+pub type AlgnGold = (HashSet<(usize, usize)>, HashSet<(usize, usize)>);
 
-pub fn alignment_error_rate(alignment: AlgnHard, alignment_gold: &AlgnGold) -> f32 {
+pub fn alignment_error_rate(alignment: &[AlgnHard], alignment_gold: &[AlgnGold]) -> f32 {
     let total: f32 = alignment
         .iter()
         .zip(alignment_gold)
@@ -16,15 +16,18 @@ pub fn alignment_error_rate(alignment: AlgnHard, alignment_gold: &AlgnGold) -> f
             // this may be unnecessarily more computationally expensive, but removes the assumption of disjoint S and P
             let s_union_p = sure
                 .union(&poss)
-                .map(|x| x.clone())
+                .copied()
                 .collect::<HashSet<(usize, usize)>>();
             let a_intersect_sp = algn
                 .intersection(&s_union_p)
                 .collect::<HashSet<&(usize, usize)>>()
                 .len() as f32;
-
-            (2.0 * a_intersect_s + a_intersect_sp) / ((algn.len() + sure.len()) as f32)
+            if algn.is_empty() & sure.is_empty() {
+                1.0
+            } else {
+                1.0 - (a_intersect_s + a_intersect_sp) / ((algn.len() + sure.len()) as f32)
+            }
         })
         .sum();
-    total / (alignment.len() as f32)
+    total / (alignment_gold.len() as f32)
 }

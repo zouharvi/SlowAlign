@@ -9,7 +9,7 @@ fn argmax(probs: &[f32]) -> usize {
         .unwrap()
 }
 
-pub fn a1_argmax(alignment_probs: &AlgnSoft) -> AlgnHard {
+pub fn a1_argmax(alignment_probs: &[AlgnSoft]) -> Vec<AlgnHard> {
     alignment_probs
         .iter()
         .map(|sent_prob| {
@@ -22,7 +22,7 @@ pub fn a1_argmax(alignment_probs: &AlgnSoft) -> AlgnHard {
         .collect()
 }
 
-pub fn a2_threshold(alignment_probs: &AlgnSoft, threshold: f32) -> AlgnHard {
+pub fn a2_threshold(alignment_probs: &[AlgnSoft], threshold: f32) -> Vec<AlgnHard> {
     alignment_probs
         .iter()
         .map(|sent_prob| {
