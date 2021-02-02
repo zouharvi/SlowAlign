@@ -3,7 +3,7 @@ use crate::evaluator::{AlgnGold, AlgnHard};
 use crate::utils::cartesian_product;
 use std::collections::HashSet;
 
-fn join_to_running(running: Option<Vec<AlgnHard>>, new: Vec<AlgnHard>) -> Option<Vec<AlgnHard>> {
+pub fn intersect_algn(running: Option<Vec<AlgnHard>>, new: Vec<AlgnHard>) -> Option<Vec<AlgnHard>> {
     if let Some(running) = running {
         Some(
             running
@@ -21,11 +21,24 @@ fn join_to_running(running: Option<Vec<AlgnHard>>, new: Vec<AlgnHard>) -> Option
     }
 }
 
+pub fn params_to_alignment(
+    params: &[f32],
+    extractors: &Vec<&dyn Fn(f32) -> Vec<AlgnHard>>,
+) -> Vec<AlgnHard> {
+    let mut running_algn: Option<Vec<AlgnHard>> = None;
+
+    for (single_param, extractor) in params.iter().zip(extractors.iter()) {
+        let algn = extractor(*single_param);
+        running_algn = intersect_algn(running_algn, algn);
+    }
+    running_algn.unwrap()
+}
+
 pub fn gridsearch(
     ranges: &[Vec<f32>],
     extractors: Vec<&dyn Fn(f32) -> Vec<AlgnHard>>,
     gold_algn: &[AlgnGold],
-) -> (Vec<f32>, f32) {
+) -> (Vec<AlgnHard>, Vec<f32>, f32) {
     // create linspace ranges
     let grid = cartesian_product(ranges);
 
@@ -35,26 +48,23 @@ pub fn gridsearch(
 
     let mut min_aer = f32::INFINITY;
     let mut best_params: Option<Vec<f32>> = None;
+    let mut best_algn: Option<Vec<AlgnHard>> = None;
 
     for params in grid {
-        println!("Trying {:?} ", params);
+        eprintln!("Trying {:?} ", params);
         assert_eq!(params.len(), extractors.len());
 
-        let mut running_algn: Option<Vec<AlgnHard>> = None;
-
-        for (single_param, extractor) in params.iter().zip(extractors.iter()) {
-            let algn = extractor(*single_param);
-            running_algn = join_to_running(running_algn, algn);
-        }
-        let aer = alignment_error_rate(&running_algn.unwrap(), gold_algn);
-        println!("AER {}\n", aer);
+        let algn = params_to_alignment(&params, &extractors);
+        let aer = alignment_error_rate(&algn, gold_algn);
+        eprintln!("AER {}\n", aer);
         if aer < min_aer {
             best_params = Some(params);
             min_aer = aer;
+            best_algn = Some(algn);
         }
     }
 
-    println!("Best AER: {}, {:?}", min_aer, best_params.clone().unwrap());
+    eprintln!("Best AER: {}, {:?}", min_aer, best_params.clone().unwrap());
 
-    (best_params.unwrap(), min_aer)
+    (best_algn.unwrap(), best_params.unwrap(), min_aer)
 }

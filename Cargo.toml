@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 crossbeam = "0.7.3"
+clap = "3.0.0-beta.2"

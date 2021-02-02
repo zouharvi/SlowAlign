@@ -1,3 +1,7 @@
+pub mod reader;
+pub mod evaluator;
+pub mod cli;
+
 pub fn cartesian_product<T>(lists: &[Vec<T>]) -> Vec<Vec<T>>
 where
     T: Clone,

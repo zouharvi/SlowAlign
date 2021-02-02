@@ -1,3 +1,4 @@
+use crate::evaluator::AlgnSoft;
 use std::collections::HashMap;
 use std::cmp;
 
@@ -12,7 +13,7 @@ pub fn ibm1(
     let mut alignment_probs = sents
         .iter()
         .map(|(s1, s2)| vec![vec![1.0 / (s1.len() as f32); s1.len()]; s2.len()])
-        .collect::<Vec<Vec<Vec<f32>>>>();
+        .collect::<Vec<AlgnSoft>>();
     let v1_len = vocab1.len();
     let v2_len = vocab2.len();
     let m_chunks: usize = v1_len / M_THREADS;

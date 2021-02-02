@@ -10,15 +10,14 @@ type Vocab = HashMap<String, usize>;
 type Sent = Vec<usize>;
 
 pub fn load(
+    file1: String,
+    file2: String,
     start: usize,
     count: usize,
-) -> (
-    Vec<(Sent, Sent)>,
-    (Vocab, Vocab),
-) {
+) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
     // load data
-    let file1 = File::open(Path::new("data/data_csen.cs")).unwrap();
-    let file2 = File::open(Path::new("data/data_csen.en")).unwrap();
+    let file1 = File::open(Path::new(&file1)).unwrap();
+    let file2 = File::open(Path::new(&file2)).unwrap();
     let reader1 = BufReader::new(file1);
     let reader2 = BufReader::new(file2);
     let mut sents = Vec::<(Vec<usize>, Vec<usize>)>::new();
@@ -48,16 +47,13 @@ pub fn load(
     (sents, (vocab1, vocab2))
 }
 
-pub fn load_all() -> (
-    Vec<(Sent, Sent)>,
-    (Vocab, Vocab),
-) {
-    load(0, usize::MAX)
+pub fn load_all(file1: String, file2: String) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
+    load(file1, file2, 0, usize::MAX)
 }
 
-pub fn load_gold(count: usize, substract_one: bool) -> Vec<AlgnGold> {
+pub fn load_gold(file: String, count: usize, substract_one: bool) -> Vec<AlgnGold> {
     // load data
-    let file = File::open(Path::new("data/data_csen.algn")).unwrap();
+    let file = File::open(Path::new(&file)).unwrap();
     let reader = BufReader::new(file);
     let mut algns = Vec::<AlgnGold>::new();
 

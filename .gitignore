@@ -6,3 +6,4 @@ data/*.en
 data/*.cs
 data/*.de
 data/de-en.txt
+data/gumar*
