@@ -1,3 +1,7 @@
+use crate::evaluator::alignment_error_rate;
+use crate::evaluator::{AlgnGold, AlgnHard, AlgnSoft};
+use std::collections::HashSet;
+
 fn cartesian_product<T>(lists: &[Vec<T>]) -> Vec<Vec<T>>
 where
     T: Clone,
@@ -24,7 +28,30 @@ where
     res
 }
 
-pub fn gridsearch(ranges: &[(f32, f32, usize)]) {
+fn join_to_running(running: Option<AlgnHard>, new: AlgnHard) -> Option<AlgnHard> {
+    if running.is_none() {
+        Some(new)
+    } else {
+        Some(
+            running
+                .unwrap()
+                .iter()
+                .zip(new)
+                .map(|(old, new)| {
+                    old.intersection(&new)
+                        .map(|x| x.clone())
+                        .collect::<HashSet<(usize, usize)>>()
+                })
+                .collect::<Vec<HashSet<(usize, usize)>>>(),
+        )
+    }
+}
+
+pub fn gridsearch(
+    ranges: &[(f32, f32, usize)],
+    extractors: &[&dyn Fn(f32) -> AlgnHard],
+    gold_algn: &AlgnGold,
+) -> (Option<Vec<f32>>, f32) {
     // create linspace ranges
     let ranges = ranges
         .iter()
@@ -35,18 +62,38 @@ pub fn gridsearch(ranges: &[(f32, f32, usize)]) {
                         if *steps <= 1 {
                             panic!("Number of steps in gridsearch has to be at least 2")
                         }
-                        (*steps as f32 - 1.0)
+                        *steps as f32 - 1.0
                     } + start
                 })
                 .collect::<Vec<f32>>()
         })
         .collect::<Vec<Vec<f32>>>();
-    let params = cartesian_product(&ranges);
+    let grid = cartesian_product(&ranges);
 
-    for param in params {
-        for x in param {
-            print!("{} ", x)
-        }
-        println!()
+    if grid.is_empty() {
+        panic!("Empty list of parameters to optimize")
     }
+
+    let mut min_aer = f32::INFINITY;
+    let mut best_param: Option<Vec<f32>> = None;
+
+    for params in grid {
+        println!("Trying {:?} ", params);
+        assert_eq!(params.len(), extractors.len());
+
+        let mut running_algn: Option<AlgnHard> = None;
+
+        for (single_param, extractor) in params.iter().zip(extractors) {
+            let algn = extractor(*single_param);
+            running_algn = join_to_running(running_algn, algn);
+        }
+        let aer = alignment_error_rate(running_algn.unwrap(), gold_algn);
+        println!("AER {}\n", aer);
+        if aer < min_aer {
+            best_param = Some(params);
+            min_aer = aer;
+        }
+    }
+
+    (best_param, min_aer)
 }

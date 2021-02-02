@@ -1,5 +1,4 @@
-type AlgnHard = Vec<Vec<(usize, usize)>>;
-type AlgnSoft = [Vec<Vec<f32>>];
+use crate::evaluator::{AlgnHard, AlgnSoft};
 
 fn argmax(probs: &[f32]) -> usize {
     probs
