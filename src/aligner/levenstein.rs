@@ -1,5 +1,4 @@
 use crate::evaluator::AlgnSoft;
-use std::cmp;
 use std::collections::HashMap;
 
 fn levenshtein_distance(word1: &str, word2: &str) -> f32 {

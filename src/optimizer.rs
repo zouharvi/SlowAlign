@@ -23,7 +23,7 @@ pub fn intersect_algn(running: Option<Vec<AlgnHard>>, new: Vec<AlgnHard>) -> Opt
 
 pub fn params_to_alignment(
     params: &[f32],
-    extractors: &Vec<&dyn Fn(f32) -> Vec<AlgnHard>>,
+    extractors: &[&dyn Fn(f32) -> Vec<AlgnHard>],
 ) -> Vec<AlgnHard> {
     let mut running_algn: Option<Vec<AlgnHard>> = None;
 
