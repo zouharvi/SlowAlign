@@ -25,6 +25,6 @@ pub fn merge_sum(alignment1: &Vec<AlgnSoft>, alignment2: &Vec<AlgnSoft>, weight1
         })
         .collect::<Vec<AlgnSoft>>();
     for (sent_a1, sent_a2) in alignment1.iter().zip(alignment2) {
-        
+        // TODO
     }
 }

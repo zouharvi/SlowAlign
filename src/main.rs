@@ -33,11 +33,14 @@ fn main() {
                 panic!("Gold alignments not supplied (only top N are required)")
             };
 
+            let alignment_probs_diagonal = align_soft::misc::diagonal(&sents);
+
             let (algn, _params, _aer) = optimizer::gridsearch(
-                &[linspace(0.0, 1.0, 10), linspace(0.8, 1.0, 5)],
+                &[linspace(0.0, 0.2, 4), linspace(0.8, 1.0, 5), linspace(0.0, 1.0, 6)],
                 vec![
                     &|p: f32| align_hard::a2_threshold(&alignment_probs, p),
                     &|p: f32| align_hard::a3_threshold_dynamic(&alignment_probs, p),
+                    &|p: f32| align_hard::a2_threshold(&alignment_probs_diagonal, p),
                 ],
                 &algn_gold,
             );
