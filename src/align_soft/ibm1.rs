@@ -2,8 +2,8 @@ use crate::evaluator::AlgnSoft;
 use std::collections::HashMap;
 use std::cmp;
 
-const E_THREADS: usize = 8;
-const M_THREADS: usize = 8;
+const E_THREADS: usize = 4;
+const M_THREADS: usize = 4;
 
 pub fn ibm1(
     sents: &[(Vec<usize>, Vec<usize>)],

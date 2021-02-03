@@ -6,8 +6,8 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::Path;
 
-type Vocab = HashMap<String, usize>;
-type Sent = Vec<usize>;
+pub type Vocab = HashMap<String, usize>;
+pub type Sent = Vec<usize>;
 
 pub fn load(
     file1: String,
