@@ -56,7 +56,7 @@ pub fn gridsearch(
 
         let algn = params_to_alignment(&params, &extractors);
         let aer = alignment_error_rate(&algn, gold_algn);
-        eprintln!("AER {}\n", aer);
+        eprintln!("AER {}, best {}\n", aer, min_aer);
         if aer < min_aer {
             best_params = Some(params);
             min_aer = aer;

@@ -50,3 +50,34 @@ pub fn diagonal(sents: &[(Sent, Sent)]) -> Vec<AlgnSoft> {
 
     scores
 }
+
+pub fn blur(alignment_probs: &[AlgnSoft], alpha: f32) -> Vec<AlgnSoft> {
+    let mut scores = alignment_probs
+        .iter()
+        .map(|sent| vec![vec![0.0; sent[0].len()]; sent.len()])
+        .collect::<Vec<AlgnSoft>>();
+    let center_alpha = 1.0-4.0*alpha;
+    for (sent_i, sent) in alignment_probs.iter().enumerate() {
+        for (pos2, tgt_probs) in sent.iter().enumerate() {
+            for (pos1, _prob) in tgt_probs.iter().enumerate() {
+                scores[sent_i][pos2][pos1] = {
+                    if pos1 == 0
+                        || pos2 == 0
+                        || pos1 == tgt_probs.len() - 1
+                        || pos2 == sent.len() - 1
+                    {
+                        alignment_probs[sent_i][pos2][pos1]
+                    } else {
+                        0.0 + alpha * alignment_probs[sent_i][pos2 - 1][pos1]
+                            + alpha * alignment_probs[sent_i][pos2 + 1][pos1]
+                            + center_alpha * alignment_probs[sent_i][pos2][pos1]
+                            + alpha * alignment_probs[sent_i][pos2][pos1 - 1]
+                            + alpha * alignment_probs[sent_i][pos2][pos1 + 1]
+                    }
+                }
+            }
+        }
+    }
+
+    scores
+}
