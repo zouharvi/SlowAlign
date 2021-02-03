@@ -2,7 +2,7 @@ use crate::evaluator::AlgnSoft;
 pub mod ibm1;
 pub mod misc;
 
-pub fn merge_sum(alignment1: &Vec<AlgnSoft>, alignment2: &Vec<AlgnSoft>, weight1: f32) {
+pub fn merge_sum(alignment1: &[AlgnSoft], alignment2: &[AlgnSoft], weight1: f32) {
     let weight2 = 1.0 - weight1;
     assert_eq!(alignment1.len(), alignment2.len());
     let mut scores = alignment1

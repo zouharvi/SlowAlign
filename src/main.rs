@@ -43,11 +43,11 @@ fn main() {
                     linspace(0.0, 0.2, 4),
                 ],
                 vec![
-                    &|p: f32| align_hard::a2_threshold(&alignment_probs, p),
-                    &|p: f32| align_hard::a3_threshold_dynamic(&alignment_probs, p),
-                    &|p: f32| align_hard::a2_threshold(&alignment_probs_diagonal, p),
-                    &|p: f32| {
-                        align_hard::a2_threshold(&align_soft::misc::blur(&alignment_probs, p), 0.1)
+                    &|p: &f32| align_hard::a2_threshold(&alignment_probs, *p),
+                    &|p: &f32| align_hard::a3_threshold_dynamic(&alignment_probs, *p),
+                    &|p: &f32| align_hard::a2_threshold(&alignment_probs_diagonal, *p),
+                    &|p: &f32| {
+                        align_hard::a2_threshold(&align_soft::misc::blur(&alignment_probs, *p), 0.1)
                     },
                 ],
                 &algn_gold,
