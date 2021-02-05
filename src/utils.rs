@@ -37,7 +37,10 @@ where
 
 pub fn linspace(start: f32, end: f32, steps: usize) -> Vec<f32> {
     if steps <= 1 {
-        panic!("Number of steps in gridsearch has to be at least 2")
+        if start != end {
+            panic!("Number of steps in gridsearch has to be at least 2 in case where start != end")
+        }
+        return vec![start];
     }
     (0..steps)
         .map(|step| (end - start) * (step as f32) / { steps as f32 - 1.0 } + start)

@@ -41,16 +41,18 @@ fn main() {
             let (algn, _params, _aer) = optimizer::gridsearch(
                 &[
                     //noparam(),
-                    pack(&linspace(0.0, 0.2, 4)),
-                    pack(&linspace(0.9, 1.0, 2)),
-                    pack(&linspace(0.4, 0.8, 4)),
+                    pack(&linspace(0.0, 0.1, 2)),
+                    pack(&linspace(0.0, 0.0, 1)),
+                    pack(&linspace(0.9, 1.0, 4)),
+                    pack(&linspace(0.4, 0.8, 6)),
                     cartesian_product(&vec![linspace(0.0, 0.2, 4), linspace(0.0, 0.4, 8)]),
                 ],
                 vec![
                     //&|p: &[f32]| align_hard::a1_argmax(&alignment_probs),
                     &|p: &[f32]| align_hard::a2_threshold(&alignment_probs, p[0]),
                     &|p: &[f32]| align_hard::a3_threshold_dynamic(&alignment_probs, p[0]),
-                    &|p: &[f32]| align_hard::a2_threshold(&alignment_probs_diagonal, p[0]),
+                    &|p: &[f32]| align_hard::a4_threshold_dynamic(&alignment_probs, p[0]),
+                    &|p: &[f32]| align_hard::a4_threshold_dynamic(&alignment_probs_diagonal, p[0]),
                     &|p: &[f32]| {
                         align_hard::a2_threshold(
                             &align_soft::misc::blur(&alignment_probs, p[0]),
