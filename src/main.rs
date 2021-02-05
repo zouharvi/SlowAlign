@@ -24,11 +24,11 @@ fn main() {
         "argmax" => align_hard::a1_argmax(&alignment_probs),
         "basic" => {
             let algn_a1 = align_hard::a1_argmax(&alignment_probs);
-            let algn_a2 = align_hard::a2_threshold(&alignment_probs, 0.2);
+            let algn_a2 = align_hard::a2_threshold(&alignment_probs, 0.01);
             optimizer::intersect_algn(Some(algn_a1), algn_a2).unwrap()
         }
         "search" => {
-            const GOLD_COUNT: usize = 500;
+            const GOLD_COUNT: usize = 100;
             let algn_gold = if let Some(file) = opts.gold {
                 reader::load_gold(file, GOLD_COUNT, false)
             } else {
@@ -36,29 +36,43 @@ fn main() {
             };
 
             let alignment_probs_diagonal = align_soft::misc::diagonal(&sents[..GOLD_COUNT]);
+            let alignment_probs_levenstein =
+                align_soft::misc::levenstein(&sents[..GOLD_COUNT], &vocab1, &vocab2);
             let alignment_probs = &alignment_probs[..GOLD_COUNT];
 
             let (algn, _params, _aer) = optimizer::gridsearch(
                 &[
                     //noparam(),
-                    pack(&linspace(0.0, 0.1, 2)),
+                    pack(&linspace(0.0, 0.05, 2)),
                     pack(&linspace(0.0, 0.0, 1)),
-                    pack(&linspace(0.9, 1.0, 4)),
-                    pack(&linspace(0.4, 0.8, 6)),
-                    cartesian_product(&vec![linspace(0.0, 0.2, 4), linspace(0.0, 0.4, 8)]),
+                    pack(&linspace(0.95, 1.0, 4)),
+                    pack(&linspace(0.4, 0.8, 5)),
+                    cartesian_product(&vec![linspace(0.0, 0.2, 3), linspace(0.1, 0.3, 8)]),
+                    pack(&linspace(0.7, 1.0, 4)),
                 ],
                 vec![
                     //&|p: &[f32]| align_hard::a1_argmax(&alignment_probs),
-                    &|p: &[f32]| align_hard::a2_threshold(&alignment_probs, p[0]),
-                    &|p: &[f32]| align_hard::a3_threshold_dynamic(&alignment_probs, p[0]),
-                    &|p: &[f32]| align_hard::a4_threshold_dynamic(&alignment_probs, p[0]),
-                    &|p: &[f32]| align_hard::a4_threshold_dynamic(&alignment_probs_diagonal, p[0]),
-                    &|p: &[f32]| {
+                    (optimizer::AlgnMergeAction::INTERSECT, &|p: &[f32]| {
+                        align_hard::a2_threshold(&alignment_probs, p[0])
+                    }),
+                    (optimizer::AlgnMergeAction::INTERSECT, &|p: &[f32]| {
+                        align_hard::a3_threshold_dynamic(&alignment_probs, p[0])
+                    }),
+                    (optimizer::AlgnMergeAction::INTERSECT, &|p: &[f32]| {
+                        align_hard::a4_threshold_dynamic(&alignment_probs, p[0])
+                    }),
+                    (optimizer::AlgnMergeAction::INTERSECT, &|p: &[f32]| {
+                        align_hard::a4_threshold_dynamic(&alignment_probs_diagonal, p[0])
+                    }),
+                    (optimizer::AlgnMergeAction::INTERSECT, &|p: &[f32]| {
                         align_hard::a2_threshold(
                             &align_soft::misc::blur(&alignment_probs, p[0]),
                             p[1],
                         )
-                    },
+                    }),
+                    (optimizer::AlgnMergeAction::JOIN, &|p: &[f32]| {
+                        align_hard::a2_threshold(&alignment_probs_levenstein, p[0])
+                    }),
                 ],
                 &algn_gold,
             );
