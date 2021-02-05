@@ -47,10 +47,10 @@ fn main() {
                     pack(&linspace(0.0, 0.0, 1)),
                     pack(&linspace(0.95, 1.0, 4)),
                     pack(&linspace(0.4, 0.8, 5)),
-                    cartesian_product(&vec![linspace(0.0, 0.2, 3), linspace(0.1, 0.3, 8)]),
+                    cartesian_product(&[linspace(0.0, 0.2, 3), linspace(0.1, 0.3, 8)]),
                     pack(&linspace(0.7, 1.0, 4)),
                 ],
-                vec![
+                &[
                     //&|p: &[f32]| align_hard::a1_argmax(&alignment_probs),
                     (optimizer::AlgnMergeAction::INTERSECT, &|p: &[f32]| {
                         align_hard::a2_threshold(&alignment_probs, p[0])

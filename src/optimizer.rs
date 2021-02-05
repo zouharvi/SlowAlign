@@ -61,7 +61,7 @@ pub fn params_to_alignment<T>(
 
 pub fn gridsearch<T>(
     ranges: &[Vec<Vec<T>>],
-    extractors: Vec<(AlgnMergeAction, &dyn Fn(&[T]) -> Vec<AlgnHard>)>,
+    extractors: &[(AlgnMergeAction, &dyn Fn(&[T]) -> Vec<AlgnHard>)],
     gold_algn: &[AlgnGold],
 ) -> (Vec<AlgnHard>, Vec<Vec<T>>, f32)
 where

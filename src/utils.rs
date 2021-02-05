@@ -37,6 +37,7 @@ where
 
 pub fn linspace(start: f32, end: f32, steps: usize) -> Vec<f32> {
     if steps <= 1 {
+        #[allow(clippy::float_cmp)]
         if start != end {
             panic!("Number of steps in gridsearch has to be at least 2 in case where start != end")
         }
