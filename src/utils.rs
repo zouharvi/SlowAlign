@@ -28,21 +28,24 @@ where
     res
 }
 
+pub fn pack<T>(range: &[T]) -> Vec<Vec<T>>
+where
+    T: Copy,
+{
+    range.iter().map(|x| vec![*x]).collect()
+}
+
 pub fn linspace(start: f32, end: f32, steps: usize) -> Vec<f32> {
     if steps <= 1 {
         panic!("Number of steps in gridsearch has to be at least 2")
     }
     (0..steps)
-        .map(|step| {
-            (end - start) * (step as f32) / {
-                steps as f32 - 1.0
-            } + start
-        })
+        .map(|step| (end - start) * (step as f32) / { steps as f32 - 1.0 } + start)
         .collect::<Vec<f32>>()
 }
 
-pub fn noparam() -> Vec<f32> {
-    vec![0.0]
+pub fn noparam() -> Vec<Vec<f32>> {
+    vec![vec![0.0]]
 }
 
 pub fn levenstein_distance(word1: &str, word2: &str) -> f32 {

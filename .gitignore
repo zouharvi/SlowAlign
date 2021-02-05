@@ -5,5 +5,9 @@ data/*.sent
 data/*.en
 data/*.cs
 data/*.de
+data/*.a
+data/*.e
+data/*.f
+nltk_experiment
 data/de-en.txt
 data/gumar*

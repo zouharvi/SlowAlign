@@ -22,8 +22,8 @@ pub fn intersect_algn(running: Option<Vec<AlgnHard>>, new: Vec<AlgnHard>) -> Opt
 }
 
 pub fn params_to_alignment<T>(
-    params: &[T],
-    extractors: &[&dyn Fn(&T) -> Vec<AlgnHard>],
+    params: &[Vec<T>],
+    extractors: &[&dyn Fn(&[T]) -> Vec<AlgnHard>],
 ) -> Vec<AlgnHard> {
     let mut running_algn: Option<Vec<AlgnHard>> = None;
 
@@ -35,10 +35,10 @@ pub fn params_to_alignment<T>(
 }
 
 pub fn gridsearch<T>(
-    ranges: &[Vec<T>],
-    extractors: Vec<&dyn Fn(&T) -> Vec<AlgnHard>>,
+    ranges: &[Vec<Vec<T>>],
+    extractors: Vec<&dyn Fn(&[T]) -> Vec<AlgnHard>>,
     gold_algn: &[AlgnGold],
-) -> (Vec<AlgnHard>, Vec<T>, f32)
+) -> (Vec<AlgnHard>, Vec<Vec<T>>, f32)
 where
     T: Clone, T: std::fmt::Debug,
 {
@@ -50,7 +50,7 @@ where
     }
 
     let mut min_aer = f32::INFINITY;
-    let mut best_params: Option<Vec<T>> = None;
+    let mut best_params: Option<Vec<Vec<T>>> = None;
     let mut best_algn: Option<Vec<AlgnHard>> = None;
 
     for params in grid {

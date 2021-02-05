@@ -1,4 +1,5 @@
-use crate::utils::linspace;
+use crate::utils::cartesian_product;
+use crate::utils::{linspace, noparam, pack};
 use clap::Clap;
 
 mod align_hard;
@@ -27,27 +28,34 @@ fn main() {
             optimizer::intersect_algn(Some(algn_a1), algn_a2).unwrap()
         }
         "search" => {
+            const GOLD_COUNT: usize = 500;
             let algn_gold = if let Some(file) = opts.gold {
-                reader::load_gold(file, 100, true)
+                reader::load_gold(file, GOLD_COUNT, false)
             } else {
                 panic!("Gold alignments not supplied (only top N are required)")
             };
 
-            let alignment_probs_diagonal = align_soft::misc::diagonal(&sents);
+            let alignment_probs_diagonal = align_soft::misc::diagonal(&sents[..GOLD_COUNT]);
+            let alignment_probs = &alignment_probs[..GOLD_COUNT];
 
             let (algn, _params, _aer) = optimizer::gridsearch(
                 &[
-                    linspace(0.0, 0.2, 4),
-                    linspace(0.8, 1.0, 4),
-                    linspace(0.6, 1.0, 4),
-                    linspace(0.0, 0.2, 4),
+                    //noparam(),
+                    pack(&linspace(0.0, 0.2, 4)),
+                    pack(&linspace(0.9, 1.0, 2)),
+                    pack(&linspace(0.4, 0.8, 4)),
+                    cartesian_product(&vec![linspace(0.0, 0.2, 4), linspace(0.0, 0.4, 8)]),
                 ],
                 vec![
-                    &|p: &f32| align_hard::a2_threshold(&alignment_probs, *p),
-                    &|p: &f32| align_hard::a3_threshold_dynamic(&alignment_probs, *p),
-                    &|p: &f32| align_hard::a2_threshold(&alignment_probs_diagonal, *p),
-                    &|p: &f32| {
-                        align_hard::a2_threshold(&align_soft::misc::blur(&alignment_probs, *p), 0.1)
+                    //&|p: &[f32]| align_hard::a1_argmax(&alignment_probs),
+                    &|p: &[f32]| align_hard::a2_threshold(&alignment_probs, p[0]),
+                    &|p: &[f32]| align_hard::a3_threshold_dynamic(&alignment_probs, p[0]),
+                    &|p: &[f32]| align_hard::a2_threshold(&alignment_probs_diagonal, p[0]),
+                    &|p: &[f32]| {
+                        align_hard::a2_threshold(
+                            &align_soft::misc::blur(&alignment_probs, p[0]),
+                            p[1],
+                        )
                     },
                 ],
                 &algn_gold,
