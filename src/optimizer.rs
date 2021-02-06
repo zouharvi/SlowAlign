@@ -3,8 +3,10 @@ use crate::evaluator::{AlgnGold, AlgnHard};
 use crate::utils::cartesian_product;
 use std::collections::HashSet;
 
+#[derive(Copy, Clone)]
 pub enum AlgnMergeAction {
-    JOIN, INTERSECT
+    JOIN,
+    INTERSECT,
 }
 
 pub fn intersect_algn(running: Option<Vec<AlgnHard>>, new: Vec<AlgnHard>) -> Option<Vec<AlgnHard>> {
@@ -60,15 +62,23 @@ pub fn params_to_alignment<T>(
 }
 
 pub fn gridsearch<T>(
-    ranges: &[Vec<Vec<T>>],
-    extractors: &[(AlgnMergeAction, &dyn Fn(&[T]) -> Vec<AlgnHard>)],
+    extractors: &[(Vec<Vec<T>>, AlgnMergeAction, &dyn Fn(&[T]) -> Vec<AlgnHard>)],
     gold_algn: &[AlgnGold],
 ) -> (Vec<AlgnHard>, Vec<Vec<T>>, f32)
 where
     T: Clone,
     T: std::fmt::Debug,
+    T: std::marker::Sized,
 {
     // create linspace ranges
+    let ranges = extractors
+        .iter()
+        .map(|(range, _action, _func)| range.clone())
+        .collect();
+    let functions = extractors
+        .iter()
+        .map(|(_range, action, func)| (*action, *func))
+        .collect::<Vec<(AlgnMergeAction, &dyn Fn(&[T]) -> Vec<AlgnHard>)>>();
     let grid = cartesian_product(ranges);
 
     if grid.is_empty() {
@@ -83,7 +93,7 @@ where
         eprintln!("Trying {:?} ", params);
         assert_eq!(params.len(), extractors.len());
 
-        let algn = params_to_alignment(&params, &extractors);
+        let algn = params_to_alignment(&params, &functions);
         let aer = alignment_error_rate(&algn, gold_algn);
         eprintln!("AER {}, best {}\n", aer, min_aer);
         if aer < min_aer {

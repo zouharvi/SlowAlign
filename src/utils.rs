@@ -2,7 +2,7 @@ pub mod cli;
 pub mod evaluator;
 pub mod reader;
 
-pub fn cartesian_product<T>(lists: &[Vec<T>]) -> Vec<Vec<T>>
+pub fn cartesian_product<T>(lists: Vec<Vec<T>>) -> Vec<Vec<T>>
 where
     T: Clone,
 {
@@ -48,8 +48,8 @@ pub fn linspace(start: f32, end: f32, steps: usize) -> Vec<f32> {
         .collect::<Vec<f32>>()
 }
 
-pub fn noparam() -> Vec<Vec<f32>> {
-    vec![vec![0.0]]
+pub fn noparam() -> Vec<f32> {
+    vec![0.0]
 }
 
 pub fn levenstein_distance(word1: &str, word2: &str) -> f32 {
