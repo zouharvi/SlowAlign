@@ -51,13 +51,13 @@ pub fn load_all(file1: String, file2: String) -> (Vec<(Sent, Sent)>, (Vocab, Voc
     load(file1, file2, 0, usize::MAX)
 }
 
-pub fn load_gold(file: String, count: usize, substract_one: bool) -> Vec<AlgnGold> {
+pub fn load_gold(file: &str, substract_one: bool) -> Vec<AlgnGold> {
     // load data
     let file = File::open(Path::new(&file)).unwrap();
     let reader = BufReader::new(file);
     let mut algns = Vec::<AlgnGold>::new();
 
-    for line in reader.lines().take(count) {
+    for line in reader.lines() {
         let mut sure = HashSet::<(usize, usize)>::new();
         let mut poss = HashSet::<(usize, usize)>::new();
         let line = line.unwrap();
