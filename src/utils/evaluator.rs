@@ -29,7 +29,7 @@ pub fn alignment_error_rate(alignment: &[AlgnHard], alignment_gold: &[AlgnGold])
             }
         })
         .sum();
-    total / (alignment_gold.len() as f32)
+    total / (usize::min(alignment.len(), alignment_gold.len()) as f32)
 }
 
 pub fn alignment_reverse(alignment: &[AlgnHard]) -> Vec<AlgnHard> {

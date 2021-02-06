@@ -48,7 +48,7 @@ fn main() {
             let alignment_probs =
                 &align_soft::ibm1::ibm1(&sents, &vocab1, &vocab2)[..GOLD_DEV_COUNT];
 
-            let (algn, _params, _aer) = optimizer::gridsearch(
+            let (algn, params, _aer) = optimizer::gridsearch(
                 &[
                     //(pack(&noparam()), optimizer::AlgnMergeAction::INTERSECT, &|p: &[f32]| align_hard::a1_argmax(&alignment_probs),
                     (
@@ -108,6 +108,7 @@ fn main() {
 
     if let Some(file) = opts.gold {
         let alignment_eval = reader::load_gold(&file, opts.gold_substract_one);
+        eprintln!("{}, {}", alignment.len(),alignment_eval.len());
         let aer = alignment_error_rate(&alignment, &alignment_eval);
         eprintln!("AER {}\n", aer);
     };
