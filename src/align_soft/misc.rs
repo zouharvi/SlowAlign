@@ -1,7 +1,6 @@
 use crate::evaluator::AlgnSoft;
 use crate::reader::{Sent, Vocab};
 use crate::utils::{levenstein_distance, writer};
-use std::collections::HashMap;
 
 pub fn levenstein(sents: &[(Sent, Sent)], vocab1: &Vocab, vocab2: &Vocab) -> Vec<AlgnSoft> {
     let vocab1rev = writer::vocab_rev(vocab1);

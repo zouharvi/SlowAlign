@@ -2,9 +2,6 @@ use crate::reader::{Vocab, VocabRev};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
-use std::io::BufWriter;
-
-pub type Sent = Vec<usize>;
 
 pub fn write_dict(
     file: String,
