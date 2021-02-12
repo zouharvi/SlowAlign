@@ -1,6 +1,6 @@
 use crate::evaluator::AlgnSoft;
 use crate::reader::{Sent, SentText, Vocab};
-use crate::utils::{levenstein_distance, writer};
+use crate::utils::{levenstein_distance, transpose, writer};
 
 pub fn levenstein(sents: &[(Sent, Sent)], vocab1: &Vocab, vocab2: &Vocab) -> Vec<AlgnSoft> {
     let vocab1rev = writer::vocab_rev(vocab1);
@@ -75,11 +75,33 @@ pub fn blur(alignment_probs: &[AlgnSoft], alpha: f32) -> Vec<AlgnSoft> {
     scores
 }
 
+pub fn from_dic_rev(
+    sents: &[(Sent, Sent)],
+    vocab1: &Vocab,
+    vocab2: &Vocab,
+    dic: &Vec<Vec<f32>>,
+    dic_vocab1: &Vocab,
+    dic_vocab2: &Vocab,
+) -> Vec<AlgnSoft> {
+    let sents_rev = &sents
+        .iter()
+        .map(|(s1, s2)| (s2.clone(), s1.clone()))
+        .collect::<Vec<(Sent, Sent)>>();
+    from_dic(
+        sents_rev,
+        vocab2,
+        vocab1,
+        &transpose(dic.clone()),
+        dic_vocab2,
+        dic_vocab1,
+    )
+}
+
 pub fn from_dic(
     sents: &[(Sent, Sent)],
     vocab1: &Vocab,
     vocab2: &Vocab,
-    dic: Vec<Vec<f32>>,
+    dic: &Vec<Vec<f32>>,
     dic_vocab1: &Vocab,
     dic_vocab2: &Vocab,
 ) -> Vec<AlgnSoft> {

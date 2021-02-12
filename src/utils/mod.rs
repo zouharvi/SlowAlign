@@ -78,3 +78,13 @@ pub fn levenstein_distance(word1: &str, word2: &str) -> f32 {
     }
     matrix[word2_length - 1][word1_length - 1] as f32
 }
+
+pub fn transpose<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>>
+where
+    T: Clone,
+{
+    assert!(!v.is_empty());
+    (0..v[0].len())
+        .map(|i| v.iter().map(|inner| inner[i].clone()).collect::<Vec<T>>())
+        .collect()
+}

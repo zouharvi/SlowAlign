@@ -23,14 +23,39 @@ fn main() {
                 opts.dic
                     .expect("Path to word translation probability file has to be provided."),
             );
-            align_hard::a1_argmax(&align_soft::misc::from_dic(
-                &sents,
-                &vocab1,
-                &vocab2,
-                dic,
-                &dic_vocab1,
-                &dic_vocab2,
-            ))
+            let package = AlignmentPackage {
+                alignment_fwd: &align_soft::misc::from_dic(
+                    &sents,
+                    &vocab1,
+                    &vocab2,
+                    &dic,
+                    &dic_vocab1,
+                    &dic_vocab2,
+                ),
+                alignment_rev: &align_soft::misc::from_dic_rev(
+                    &sents,
+                    &vocab1,
+                    &vocab2,
+                    &dic,
+                    &dic_vocab1,
+                    &dic_vocab2,
+                ),
+                alignment_diag: &align_soft::misc::diagonal(&sents),
+                alignment_lev: &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
+            };
+            optimizer::params_to_alignment(
+                &[
+                    vec![0.0],
+                    vec![0.0],
+                    vec![0.1],
+                    vec![0.6],
+                    vec![0.0, 0.2],
+                    vec![0.1],
+                    vec![0.9],
+                ],
+                &package,
+                &optimizer::extractor_recipes,
+            )
         }
         "static" => align_hard::a1_argmax(&align_soft::merge_sum(
             &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
