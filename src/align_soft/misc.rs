@@ -1,5 +1,5 @@
 use crate::evaluator::AlgnSoft;
-use crate::reader::{Sent, Vocab};
+use crate::reader::{Sent, SentText, Vocab};
 use crate::utils::{levenstein_distance, writer};
 
 pub fn levenstein(sents: &[(Sent, Sent)], vocab1: &Vocab, vocab2: &Vocab) -> Vec<AlgnSoft> {
@@ -66,6 +66,55 @@ pub fn blur(alignment_probs: &[AlgnSoft], alpha: f32) -> Vec<AlgnSoft> {
                             + center_alpha * alignment_probs[sent_i][pos2][pos1]
                             + alpha * alignment_probs[sent_i][pos2][pos1 - 1]
                             + alpha * alignment_probs[sent_i][pos2][pos1 + 1]
+                    }
+                }
+            }
+        }
+    }
+
+    scores
+}
+
+pub fn from_dic(
+    sents: &[(Sent, Sent)],
+    vocab1: &Vocab,
+    vocab2: &Vocab,
+    dic: Vec<Vec<f32>>,
+    dic_vocab1: &Vocab,
+    dic_vocab2: &Vocab,
+) -> Vec<AlgnSoft> {
+    let mut scores = sents
+        .iter()
+        .map(|(sent1, sent2)| vec![vec![0.0; sent1.len()]; sent2.len()])
+        .collect::<Vec<AlgnSoft>>();
+
+    let vocab1rev = writer::vocab_rev(vocab1);
+    let vocab2rev = writer::vocab_rev(vocab2);
+
+    for (sent_i, (sent1, sent2)) in sents.iter().enumerate() {
+        for (pos2, w2_i) in sent2.iter().enumerate() {
+            let w2 = vocab2rev.get(w2_i).unwrap();
+            for (pos1, w1_i) in sent1.iter().enumerate() {
+                let w1 = vocab1rev.get(w1_i).unwrap();
+                scores[sent_i][pos2][pos1] = {
+                    // set translation probability if both present in the dictionary
+                    if dic_vocab2.contains_key(w2) && dic_vocab1.contains_key(w1) {
+                        dic[*dic_vocab2.get(w2).unwrap()][*dic_vocab1.get(w1).unwrap()]
+                    } else {
+                        0.0
+                    }
+                }
+            }
+            for (pos1, _) in sent1.iter().enumerate() {
+                let sum = scores[sent_i]
+                    .iter()
+                    .map(|tgt_probs| tgt_probs[pos1])
+                    .sum::<f32>();
+                for tgt_probs in scores[sent_i].iter_mut() {
+                    if sum == 0.0 {
+                        tgt_probs[pos1] = 0.0;
+                    } else {
+                        tgt_probs[pos1] /= sum;
                     }
                 }
             }

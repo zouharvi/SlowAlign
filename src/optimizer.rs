@@ -70,8 +70,8 @@ pub fn params_to_alignment<T>(
 
 pub fn gridsearch<T>(
     package: &AlignmentPackage,
+    extractor_params: &[Vec<Vec<T>>],
     extractors: &[(
-        Vec<Vec<T>>,
         AlgnMergeAction,
         &dyn Fn(&[T], &AlignmentPackage) -> Vec<AlgnHard>,
     )],
@@ -83,18 +83,7 @@ where
     T: std::marker::Sized,
 {
     // create linspace ranges
-    let ranges = extractors
-        .iter()
-        .map(|(range, _action, _func)| range.clone())
-        .collect();
-    let functions = extractors
-        .iter()
-        .map(|(_range, action, func)| (*action, *func))
-        .collect::<Vec<(
-            AlgnMergeAction,
-            &dyn Fn(&[T], &AlignmentPackage) -> Vec<AlgnHard>,
-        )>>();
-    let grid = cartesian_product(ranges);
+    let grid = cartesian_product(extractor_params);
 
     if grid.is_empty() {
         panic!("Empty list of parameters to optimize")
@@ -108,7 +97,7 @@ where
         eprintln!("Trying {:?} ", params);
         assert_eq!(params.len(), extractors.len());
 
-        let algn = params_to_alignment(&params, package, &functions);
+        let algn = params_to_alignment(&params, package, &extractors);
         let aer = alignment_error_rate(&algn, gold_algn);
         eprintln!("AER {}, best {}\n", aer, min_aer);
         if aer < min_aer {
@@ -130,64 +119,65 @@ pub struct AlignmentPackage<'a> {
     pub alignment_lev: &'a [AlgnSoft],
 }
 
-pub fn extractor_recipes() -> Vec<(
-    Vec<Vec<f32>>,
+pub const extractor_recipes: &[(
     AlgnMergeAction,
     &'static dyn Fn(&[f32], &AlignmentPackage) -> Vec<AlgnHard>,
-)> {
+)] = &[
+    (
+        AlgnMergeAction::INTERSECT,
+        &|p: &[f32], package: &AlignmentPackage| {
+            align_hard::a2_threshold(package.alignment_fwd, p[0])
+        },
+    ),
+    (
+        AlgnMergeAction::INTERSECT,
+        &|p: &[f32], package: &AlignmentPackage| {
+            align_hard::a3_threshold_dynamic(package.alignment_fwd, p[0])
+        },
+    ),
+    (
+        AlgnMergeAction::INTERSECT,
+        &|p: &[f32], package: &AlignmentPackage| {
+            align_hard::a4_threshold_dynamic(package.alignment_fwd, p[0])
+        },
+    ),
+    (
+        AlgnMergeAction::INTERSECT,
+        &|p: &[f32], package: &AlignmentPackage| {
+            align_hard::a4_threshold_dynamic(package.alignment_diag, p[0])
+        },
+    ),
+    (
+        AlgnMergeAction::INTERSECT,
+        &|p: &[f32], package: &AlignmentPackage| {
+            align_hard::a2_threshold(&align_soft::misc::blur(package.alignment_fwd, p[0]), p[1])
+        },
+    ),
+    (
+        AlgnMergeAction::INTERSECT,
+        &|p: &[f32], package: &AlignmentPackage| {
+            alignment_reverse(&align_hard::a4_threshold_dynamic(
+                package.alignment_rev,
+                p[0],
+            ))
+        },
+    ),
+    (
+        AlgnMergeAction::JOIN,
+        &|p: &[f32], package: &AlignmentPackage| {
+            align_hard::a2_threshold(package.alignment_lev, p[0])
+        },
+    ),
+];
+
+pub fn extractor_recipes_params() -> Vec<Vec<Vec<f32>>> {
     vec![
-        //(pack(&noparam()), optimizer::AlgnMergeAction::INTERSECT, &|p: &[f32]| align_hard::a1_argmax(&alignment_probs),
-        (
-            pack(&linspace(0.0, 0.05, 2)),
-            AlgnMergeAction::INTERSECT,
-            &|p: &[f32], package: &AlignmentPackage| {
-                align_hard::a2_threshold(package.alignment_fwd, p[0])
-            },
-        ),
-        (
-            pack(&linspace(0.0, 0.0, 1)),
-            AlgnMergeAction::INTERSECT,
-            &|p: &[f32], package: &AlignmentPackage| {
-                align_hard::a3_threshold_dynamic(package.alignment_fwd, p[0])
-            },
-        ),
-        (
-            pack(&linspace(0.95, 1.0, 4)),
-            AlgnMergeAction::INTERSECT,
-            &|p: &[f32], package: &AlignmentPackage| {
-                align_hard::a4_threshold_dynamic(package.alignment_fwd, p[0])
-            },
-        ),
-        (
-            pack(&linspace(0.4, 0.8, 5)),
-            AlgnMergeAction::INTERSECT,
-            &|p: &[f32], package: &AlignmentPackage| {
-                align_hard::a4_threshold_dynamic(package.alignment_diag, p[0])
-            },
-        ),
-        (
-            cartesian_product(vec![linspace(0.0, 0.2, 3), linspace(0.1, 0.3, 8)]),
-            AlgnMergeAction::INTERSECT,
-            &|p: &[f32], package: &AlignmentPackage| {
-                align_hard::a2_threshold(&align_soft::misc::blur(package.alignment_fwd, p[0]), p[1])
-            },
-        ),
-        (
-            pack(&linspace(0.95, 1.0, 4)),
-            AlgnMergeAction::INTERSECT,
-            &|p: &[f32], package: &AlignmentPackage| {
-                alignment_reverse(&align_hard::a4_threshold_dynamic(
-                    package.alignment_rev,
-                    p[0],
-                ))
-            },
-        ),
-        (
-            pack(&linspace(0.7, 1.0, 4)),
-            AlgnMergeAction::JOIN,
-            &|p: &[f32], package: &AlignmentPackage| {
-                align_hard::a2_threshold(package.alignment_lev, p[0])
-            },
-        ),
+        pack(&linspace(0.0, 0.05, 2)),
+        pack(&linspace(0.0, 0.0, 1)),
+        pack(&linspace(0.95, 1.0, 4)),
+        pack(&linspace(0.4, 0.8, 5)),
+        cartesian_product(&[linspace(0.0, 0.2, 3), linspace(0.1, 0.3, 8)]),
+        pack(&linspace(0.95, 1.0, 4)),
+        pack(&linspace(0.7, 1.0, 4)),
     ]
 }

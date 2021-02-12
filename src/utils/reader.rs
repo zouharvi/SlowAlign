@@ -1,4 +1,5 @@
 use crate::evaluator::AlgnGold;
+use crate::utils::cli::OptsMain;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs::File;
@@ -8,10 +9,11 @@ use std::io::BufReader;
 pub type Vocab = HashMap<String, usize>;
 pub type VocabRev = HashMap<usize, String>;
 pub type Sent = Vec<usize>;
+pub type SentText = Vec<String>;
 
 pub fn load(
-    file1: String,
-    file2: String,
+    file1: &str,
+    file2: &str,
     start: usize,
     count: usize,
 ) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
@@ -44,8 +46,36 @@ pub fn load(
     (sents, (vocab1, vocab2))
 }
 
-pub fn load_all(file1: String, file2: String) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
+pub fn load_all(file1: &str, file2: &str) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
     load(file1, file2, 0, usize::MAX)
+}
+
+pub fn load_sent(sents1: &str, sents2: &str) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
+    let mut sents = Vec::<(Vec<usize>, Vec<usize>)>::new();
+    let mut vocab1 = HashMap::<String, usize>::new();
+    let mut vocab2 = HashMap::<String, usize>::new();
+    let reader1 = sents1.split('\n').collect::<Vec<&str>>();
+    let reader2 = sents2.split('\n').collect::<Vec<&str>>();
+
+    for (line1, line2) in reader1.iter().zip(reader2.iter()) {
+        let tokens1 = line1
+            .split_whitespace()
+            .map(|token| {
+                let len = vocab1.len();
+                *vocab1.entry(token.to_string()).or_insert(len)
+            })
+            .collect();
+        let tokens2 = line2
+            .split_whitespace()
+            .map(|token| {
+                let len = vocab2.len();
+                *vocab2.entry(token.to_string()).or_insert(len)
+            })
+            .collect();
+        sents.push((tokens1, tokens2));
+    }
+
+    (sents, (vocab1, vocab2))
 }
 
 pub fn load_gold(file: &str, substract_one: bool) -> Vec<AlgnGold> {
@@ -108,4 +138,14 @@ pub fn load_word_probs(file: String) -> (Vec<Vec<f32>>, (Vocab, Vocab)) {
     }
 
     (word_probs, (vocab1, vocab2))
+}
+
+pub fn load_data(opts: &OptsMain) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
+    if let (Some(file1), Some(file2)) = (&opts.file1, &opts.file2) {
+        load_all(file1, file2)
+    } else if let (Some(sent1), Some(sent2)) = (&opts.sent1, &opts.sent2) {
+        load_sent(sent1, sent2)
+    } else {
+        panic!("Either two files or two sentences have to be provided")
+    }
 }

@@ -2,10 +2,18 @@ use clap::Clap;
 
 #[derive(Clap)]
 pub struct OptsMain {
-    pub file1: String,
-    pub file2: String,
+    #[clap(short, long)]
+    pub file1: Option<String>,
+    #[clap(short, long)]
+    pub file2: Option<String>,
+    #[clap(short, long)]
+    pub sent1: Option<String>,
+    #[clap(short, long)]
+    pub sent2: Option<String>,
     #[clap(short, long)]
     pub gold: Option<String>,
+    #[clap(short, long)]
+    pub dic: Option<String>,
     #[clap(short, long, default_value = "static")]
     pub method: String,
     #[clap(long)]
