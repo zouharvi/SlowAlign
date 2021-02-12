@@ -1,6 +1,6 @@
 use crate::evaluator::AlgnSoft;
-use std::collections::HashMap;
 use std::cmp;
+use std::collections::HashMap;
 
 const E_THREADS: usize = 4;
 const M_THREADS: usize = 4;
@@ -9,7 +9,15 @@ pub fn ibm1(
     sents: &[(Vec<usize>, Vec<usize>)],
     vocab1: &HashMap<String, usize>,
     vocab2: &HashMap<String, usize>,
-) -> Vec<Vec<Vec<f32>>> {
+) -> Vec<AlgnSoft> {
+    ibm1_raw(sents, vocab1, vocab2).0
+}
+
+pub fn ibm1_raw(
+    sents: &[(Vec<usize>, Vec<usize>)],
+    vocab1: &HashMap<String, usize>,
+    vocab2: &HashMap<String, usize>,
+) -> (Vec<AlgnSoft>, Vec<Vec<f32>>) {
     let mut alignment_probs = sents
         .iter()
         .map(|(s1, s2)| vec![vec![1.0 / (s1.len() as f32); s1.len()]; s2.len()])
@@ -19,13 +27,13 @@ pub fn ibm1(
     let m_chunks: usize = v1_len / M_THREADS;
     let sent_count: usize = sents.len();
     let e_chunks: usize = sent_count / E_THREADS;
-
+    let mut word_probs = vec![vec![]];
     // EM loop
     for step in 0..5 {
         eprintln!("step {}", step);
 
         // expectation
-        let mut word_probs = vec![vec![0.0; v1_len]; v2_len];
+        word_probs = vec![vec![0.0; v1_len]; v2_len];
         for ((s1, s2), probs) in sents.iter().zip(alignment_probs.iter()) {
             for (word_tgt, probs_tgt) in s2.iter().zip(probs.iter()) {
                 for (word_src, partial_count) in s1.iter().zip(probs_tgt) {
@@ -85,5 +93,5 @@ pub fn ibm1(
         });
     }
 
-    alignment_probs
+    (alignment_probs, word_probs)
 }

@@ -1,6 +1,6 @@
 #!/bin/env bash
 
-# generate two files (data_csen.algn and data_csen.sent) out of CzEnAli_1.0 dataset folder
+# generate two files (data_encs.algn and data_encs.sent) out of CzEnAli_1.0 dataset folder
 
 cat CzEnAli_1.0/data/**/*.wa | grep -e '<english>'  | sed -e 's/\s*<[^>]*>//g' > /tmp/text.en
 cat CzEnAli_1.0/data/**/*.wa | grep -e '<czech>'    | sed -e 's/\s*<[^>]*>//g' > /tmp/text.cs
@@ -16,9 +16,9 @@ get_seeded_random()
 
 paste -d ' ' /tmp/text.sure /tmp/text.poss > /tmp/text.algn
 
-shuf --random-source=<(get_seeded_random 64) /tmp/text.en > data_csen.en &
-shuf --random-source=<(get_seeded_random 64) /tmp/text.cs > data_csen.cs &
-shuf --random-source=<(get_seeded_random 64) /tmp/text.algn > data_csen.algn &
+shuf --random-source=<(get_seeded_random 64) /tmp/text.en > data_encs.en &
+shuf --random-source=<(get_seeded_random 64) /tmp/text.cs > data_encs.cs &
+shuf --random-source=<(get_seeded_random 64) /tmp/text.algn > data_encs.algn &
 wait
 
 echo -n "Sentences: "

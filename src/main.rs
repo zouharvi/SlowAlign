@@ -10,10 +10,10 @@ mod optimizer;
 mod utils;
 const GOLD_DEV_COUNT: usize = 20;
 
-use utils::{cli::Opts, evaluator, reader};
+use utils::{cli::OptsMain, evaluator, reader};
 
 fn main() {
-    let opts: Opts = Opts::parse();
+    let opts = OptsMain::parse();
 
     let (sents, (vocab1, vocab2)) = reader::load_all(opts.file1, opts.file2);
 
@@ -33,7 +33,7 @@ fn main() {
                 &opts
                     .gold
                     .clone()
-                    .expect("Gold alignment need to be provided for gridsearch"),
+                    .expect("Gold alignment needs to be provided for gridsearch"),
                 opts.gold_substract_one,
             )[..GOLD_DEV_COUNT];
 

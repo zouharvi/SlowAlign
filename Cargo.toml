@@ -9,3 +9,15 @@ edition = "2018"
 [dependencies]
 crossbeam = "0.7.3"
 clap = "3.0.0-beta.2"
+
+[[bin]]
+name = "slow_align"
+path = "src/main.rs"
+
+[[bin]]
+name = "slow_align_trainer"
+path = "src/trainer.rs"
+
+[[bin]]
+name = "slow_align_server"
+path = "src/server.rs"

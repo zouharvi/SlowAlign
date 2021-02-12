@@ -4,9 +4,9 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::path::Path;
 
 pub type Vocab = HashMap<String, usize>;
+pub type VocabRev = HashMap<usize, String>;
 pub type Sent = Vec<usize>;
 
 pub fn load(
@@ -16,10 +16,8 @@ pub fn load(
     count: usize,
 ) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
     // load data
-    let file1 = File::open(Path::new(&file1)).unwrap();
-    let file2 = File::open(Path::new(&file2)).unwrap();
-    let reader1 = BufReader::new(file1);
-    let reader2 = BufReader::new(file2);
+    let reader1 = BufReader::new(File::open(&file1).unwrap());
+    let reader2 = BufReader::new(File::open(&file2).unwrap());
     let mut sents = Vec::<(Vec<usize>, Vec<usize>)>::new();
     let mut vocab1 = HashMap::<String, usize>::new();
     let mut vocab2 = HashMap::<String, usize>::new();
@@ -53,8 +51,7 @@ pub fn load_all(file1: String, file2: String) -> (Vec<(Sent, Sent)>, (Vocab, Voc
 
 pub fn load_gold(file: &str, substract_one: bool) -> Vec<AlgnGold> {
     // load data
-    let file = File::open(Path::new(&file)).unwrap();
-    let reader = BufReader::new(file);
+    let reader = BufReader::new(File::open(&file).unwrap());
     let mut algns = Vec::<AlgnGold>::new();
 
     for line in reader.lines() {

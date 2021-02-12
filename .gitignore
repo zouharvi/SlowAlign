@@ -8,6 +8,7 @@ data/*.de
 data/*.a
 data/*.e
 data/*.f
+data/*.dic
 nltk_experiment
 data/de-en.txt
 data/gumar*

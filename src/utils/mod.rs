@@ -1,6 +1,7 @@
 pub mod cli;
 pub mod evaluator;
 pub mod reader;
+pub mod writer;
 
 pub fn cartesian_product<T>(lists: Vec<Vec<T>>) -> Vec<Vec<T>>
 where
