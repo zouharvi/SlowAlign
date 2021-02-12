@@ -1,7 +1,7 @@
+use crate::optimizer::AlignmentPackage;
 use crate::evaluator::alignment_error_rate;
 use crate::reader::Sent;
-use crate::utils::cartesian_product;
-use crate::utils::{linspace, noparam, pack};
+use crate::utils::{linspace, pack};
 use clap::Clap;
 
 mod align_hard;
@@ -23,9 +23,10 @@ fn main() {
             &align_soft::misc::diagonal(&sents),
             0.4,
         )),
-        "levenstein" => {
-            align_hard::a2_threshold(&align_soft::misc::levenstein(&sents, &vocab1, &vocab2), 0.75)
-        }
+        "levenstein" => align_hard::a2_threshold(
+            &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
+            0.75,
+        ),
         "ibm1" => align_hard::a1_argmax(&align_soft::ibm1::ibm1(&sents, &vocab1, &vocab2)),
         "search" => {
             let alignment_dev = &reader::load_gold(
@@ -40,65 +41,16 @@ fn main() {
                 .iter()
                 .map(|(x, y)| (y.clone(), x.clone()))
                 .collect::<Vec<(Sent, Sent)>>();
-            let alignment_probs_rev =
-                &align_soft::ibm1::ibm1(&sents_rev, &vocab2, &vocab1)[..GOLD_DEV_COUNT];
-            let alignment_probs_diagonal = align_soft::misc::diagonal(&sents[..GOLD_DEV_COUNT]);
-            let alignment_probs_levenstein =
-                align_soft::misc::levenstein(&sents[..GOLD_DEV_COUNT], &vocab1, &vocab2);
-            let alignment_probs =
-                &align_soft::ibm1::ibm1(&sents, &vocab1, &vocab2)[..GOLD_DEV_COUNT];
 
+            let package = AlignmentPackage {
+                alignment_fwd: &align_soft::ibm1::ibm1(&sents, &vocab1, &vocab2)[..GOLD_DEV_COUNT],
+                alignment_rev: &align_soft::ibm1::ibm1(&sents_rev, &vocab2, &vocab1)[..GOLD_DEV_COUNT],
+                alignment_diag: &align_soft::misc::diagonal(&sents[..GOLD_DEV_COUNT]),
+                alignment_lev: &align_soft::misc::levenstein(&sents[..GOLD_DEV_COUNT], &vocab1, &vocab2),
+            };
             let (algn, params, _aer) = optimizer::gridsearch(
-                &[
-                    //(pack(&noparam()), optimizer::AlgnMergeAction::INTERSECT, &|p: &[f32]| align_hard::a1_argmax(&alignment_probs),
-                    (
-                        pack(&linspace(0.0, 0.05, 2)),
-                        optimizer::AlgnMergeAction::INTERSECT,
-                        &|p: &[f32]| align_hard::a2_threshold(&alignment_probs, p[0]),
-                    ),
-                    (
-                        pack(&linspace(0.0, 0.0, 1)),
-                        optimizer::AlgnMergeAction::INTERSECT,
-                        &|p: &[f32]| align_hard::a3_threshold_dynamic(&alignment_probs, p[0]),
-                    ),
-                    (
-                        pack(&linspace(0.95, 1.0, 4)),
-                        optimizer::AlgnMergeAction::INTERSECT,
-                        &|p: &[f32]| align_hard::a4_threshold_dynamic(&alignment_probs, p[0]),
-                    ),
-                    (
-                        pack(&linspace(0.4, 0.8, 5)),
-                        optimizer::AlgnMergeAction::INTERSECT,
-                        &|p: &[f32]| {
-                            align_hard::a4_threshold_dynamic(&alignment_probs_diagonal, p[0])
-                        },
-                    ),
-                    (
-                        cartesian_product(vec![linspace(0.0, 0.2, 3), linspace(0.1, 0.3, 8)]),
-                        optimizer::AlgnMergeAction::INTERSECT,
-                        &|p: &[f32]| {
-                            align_hard::a2_threshold(
-                                &align_soft::misc::blur(&alignment_probs, p[0]),
-                                p[1],
-                            )
-                        },
-                    ),
-                    (
-                        pack(&linspace(0.95, 1.0, 4)),
-                        optimizer::AlgnMergeAction::INTERSECT,
-                        &|p: &[f32]| {
-                            evaluator::alignment_reverse(&align_hard::a4_threshold_dynamic(
-                                &alignment_probs_rev,
-                                p[0],
-                            ))
-                        },
-                    ),
-                    (
-                        pack(&linspace(0.7, 1.0, 4)),
-                        optimizer::AlgnMergeAction::JOIN,
-                        &|p: &[f32]| align_hard::a2_threshold(&alignment_probs_levenstein, p[0]),
-                    ),
-                ],
+                &package,
+                &optimizer::extractor_recipes(),
                 &alignment_dev,
             );
             algn
@@ -108,7 +60,7 @@ fn main() {
 
     if let Some(file) = opts.gold {
         let alignment_eval = reader::load_gold(&file, opts.gold_substract_one);
-        eprintln!("{}, {}", alignment.len(),alignment_eval.len());
+        eprintln!("{}, {}", alignment.len(), alignment_eval.len());
         let aer = alignment_error_rate(&alignment, &alignment_eval);
         eprintln!("AER {}\n", aer);
     };
