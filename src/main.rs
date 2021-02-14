@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::evaluator::alignment_error_rate;
 use crate::optimizer::AlignmentPackage;
 use crate::reader::Sent;

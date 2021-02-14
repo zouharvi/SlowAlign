@@ -6,6 +6,8 @@ use crate::utils::cartesian_product;
 use crate::{align_hard, align_soft};
 use std::collections::HashSet;
 
+pub type Extractor<T> = &'static dyn Fn(&[T], &AlignmentPackage) -> Vec<AlgnHard>;
+
 #[derive(Copy, Clone)]
 pub enum AlgnMergeAction {
     JOIN,
@@ -53,7 +55,7 @@ pub fn params_to_alignment<T>(
     package: &AlignmentPackage,
     extractors: &[(
         AlgnMergeAction,
-        &dyn Fn(&[T], &AlignmentPackage) -> Vec<AlgnHard>,
+        Extractor<T>,
     )],
 ) -> Vec<AlgnHard> {
     let mut running_algn: Option<Vec<AlgnHard>> = None;
@@ -73,7 +75,7 @@ pub fn gridsearch<T>(
     extractor_params: &[Vec<Vec<T>>],
     extractors: &[(
         AlgnMergeAction,
-        &dyn Fn(&[T], &AlignmentPackage) -> Vec<AlgnHard>,
+        Extractor<T>,
     )],
     gold_algn: &[AlgnGold],
 ) -> (Vec<AlgnHard>, Vec<Vec<T>>, f32)
@@ -119,10 +121,7 @@ pub struct AlignmentPackage<'a> {
     pub alignment_lev: &'a [AlgnSoft],
 }
 
-pub const EXTRACTOR_RECIPES: &[(
-    AlgnMergeAction,
-    &'static dyn Fn(&[f32], &AlignmentPackage) -> Vec<AlgnHard>,
-)] = &[
+pub const EXTRACTOR_RECIPES: &[(AlgnMergeAction, Extractor<f32>)] = &[
     (
         AlgnMergeAction::INTERSECT,
         &|p: &[f32], package: &AlignmentPackage| {

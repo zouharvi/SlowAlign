@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 mod utils;
 mod align_hard;
 mod align_soft;
