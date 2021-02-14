@@ -1,8 +1,19 @@
 encs_search:
-	cargo run --release --bin slow_align -- --file1 data/data_encs.en --file2 data/data_encs.cs --gold data/data_encs.algn --method search --gold-substract-one
+	cargo run --release --bin slow_align -- \
+	--file1 data/data_encs.en --file2 data/data_encs.cs \
+	--gold data/data_encs.algn --method search --gold-substract-one \
+	1> /dev/null
+
+encs_static:
+	cargo run --release --bin slow_align -- \
+	--file1 data/data_encs.en --file2 data/data_encs.cs \
+	--gold data/data_encs.algn --method static --gold-substract-one \
+	1> /dev/null
 
 encs_word_probs:
-	cargo run --release --bin slow_align_word_probs -- data/data_encs.en data/data_encs.cs data/data_encs.dic --threshold 0.1
+	cargo run --release --bin slow_align_word_probs -- \
+	data/data_encs.en data/data_encs.cs data/data_encs.dic \
+	--threshold 0.1
 
 encs_dic:
 	cargo run --release --bin slow_align -- \

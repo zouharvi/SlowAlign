@@ -5,10 +5,10 @@ mod align_hard;
 mod align_soft;
 
 use clap::Clap;
-use utils::{cli::OptsServer, evaluator, reader, writer};
+use utils::{cli::OptsDic, evaluator, reader, writer};
 
 fn main() {
-    let opts = OptsServer::parse();
+    let opts = OptsDic::parse();
     eprintln!("Training translation probabilities with IBM1. Saving with threshold {}", opts.threshold);
     let (sents, (vocab1, vocab2)) = reader::load_all(&opts.file1, &opts.file2);
 

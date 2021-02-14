@@ -45,12 +45,16 @@ pub struct OptsMain {
     pub method: String,
     #[clap(long)]
     pub gold_substract_one: bool,
-    #[clap(short, long, default_value = "[0.0],[0.0],[1.0],[0.8],[0.0,0.1],[0.95],[0.8]")]
+    #[clap(
+        short,
+        long,
+        default_value = "[0.0],[0.0],[1.0],[0.8],[0.0,0.1],[0.95],[0.8]"
+    )]
     pub params: ArgExtractorParams,
 }
 
 #[derive(Clap)]
-pub struct OptsServer {
+pub struct OptsDic {
     pub file1: String,
     pub file2: String,
     pub out: String,

@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 [package]
 name = "slow_align"
 version = "0.1.0"
@@ -17,8 +16,8 @@ name = "slow_align"
 path = "src/main.rs"
 
 [[bin]]
-name = "slow_align_word_probs"
-path = "src/main_word_probs.rs"
+name = "slow_align_dic"
+path = "src/main_dic.rs"
 
 [[bin]]
 name = "slow_align_server"
