@@ -2,6 +2,9 @@ use clap::Clap;
 use std::num::ParseFloatError;
 use std::str::FromStr;
 
+/**
+ * Holder for extractor parameters. Can be parsed from a string.
+ **/
 pub struct ArgExtractorParams {
     pub data: Vec<Vec<f32>>,
 }
@@ -27,7 +30,11 @@ impl FromStr for ArgExtractorParams {
     type Err = ParseFloatError;
 }
 
+/**
+ * Description of the command line parameters for binary slow_align.
+ **/
 #[derive(Clap)]
+#[clap(version = "0.1", author = "Vilém Zouhar <zouhar@ufal.mff.cuni.cz>")]
 pub struct OptsMain {
     #[clap(short, long)]
     pub file1: Option<String>,
@@ -51,13 +58,21 @@ pub struct OptsMain {
         default_value = "[0.0],[0.0],[1.0],[0.8],[0.0,0.1],[0.95],[0.8]"
     )]
     pub params: ArgExtractorParams,
+    #[clap(long)]
+    pub lowercase: bool,
 }
 
+/**
+ * Description of the command line parameters for binary slow_align_dic.
+ **/
 #[derive(Clap)]
+#[clap(version = "0.1", author = "Vilém Zouhar <zouhar@ufal.mff.cuni.cz>")]
 pub struct OptsDic {
     pub file1: String,
     pub file2: String,
     pub out: String,
     #[clap(short, long, default_value = "0.3")]
     pub threshold: f32,
+    #[clap(long)]
+    pub lowercase: bool,
 }

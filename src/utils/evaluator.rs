@@ -4,6 +4,10 @@ pub type AlgnHard = HashSet<(usize, usize)>;
 pub type AlgnSoft = Vec<Vec<f32>>;
 pub type AlgnGold = (HashSet<(usize, usize)>, HashSet<(usize, usize)>);
 
+/**
+ * Computes AER given a proposed and gold alignment (includes sure and poss).
+ * The computation is truncated to the smallest of the two alignments (sentence count wise).
+ **/
 pub fn alignment_error_rate(alignment: &[AlgnHard], alignment_gold: &[AlgnGold]) -> f32 {
     let total: f32 = alignment
         .iter()
@@ -32,6 +36,9 @@ pub fn alignment_error_rate(alignment: &[AlgnHard], alignment_gold: &[AlgnGold])
     total / (usize::min(alignment.len(), alignment_gold.len()) as f32)
 }
 
+/**
+ * Reverse a hard alignment.
+ **/
 pub fn alignment_reverse(alignment: &[AlgnHard]) -> Vec<AlgnHard> {
     alignment
         .iter()

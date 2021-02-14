@@ -2,6 +2,10 @@ use crate::evaluator::AlgnSoft;
 use crate::reader::{Sent, Vocab};
 use crate::utils::{levenstein_distance, transpose, writer};
 
+/**
+ * Soft alignment based on levenstein distance between token forms:
+ * 1 - lev(x,y)/(|x|+|y|)
+ **/
 pub fn levenstein(sents: &[(Sent, Sent)], vocab1: &Vocab, vocab2: &Vocab) -> Vec<AlgnSoft> {
     let vocab1rev = writer::vocab_rev(vocab1);
     let vocab2rev = writer::vocab_rev(vocab2);
@@ -25,6 +29,10 @@ pub fn levenstein(sents: &[(Sent, Sent)], vocab1: &Vocab, vocab2: &Vocab) -> Vec
     scores
 }
 
+/**
+ * Soft alignment based on word position in the sentence:
+ * 1 - ||x|/|X| - |y|/|Y||
+ **/
 pub fn diagonal(sents: &[(Sent, Sent)]) -> Vec<AlgnSoft> {
     let mut scores = sents
         .iter()
@@ -44,6 +52,14 @@ pub fn diagonal(sents: &[(Sent, Sent)]) -> Vec<AlgnSoft> {
     scores
 }
 
+/**
+ * Blurs soft alignment with a filter:
+ * [0,     alpha,     0]
+ * [alpha, 1-4*alpha, 0]
+ * [0,     alpha,     0]
+ * First and last rows/columns are omitted from this filter.
+ * The overall mass therefore changes slightly.
+ **/
 pub fn blur(alignment_probs: &[AlgnSoft], alpha: f32) -> Vec<AlgnSoft> {
     let mut scores = alignment_probs
         .iter()
@@ -75,6 +91,11 @@ pub fn blur(alignment_probs: &[AlgnSoft], alpha: f32) -> Vec<AlgnSoft> {
     scores
 }
 
+/**
+ * Creates soft alignment from pre-trained word translation probabilities.
+ * The direction is swapped and output alignments have therefore a different shape.
+ * Normalized on source token (sent1).
+ **/
 pub fn from_dic_rev(
     sents: &[(Sent, Sent)],
     vocab1: &Vocab,
@@ -97,6 +118,10 @@ pub fn from_dic_rev(
     )
 }
 
+/**
+ * Creates soft alignment from pre-trained word translation probabilities.
+ * Normalized from target token (sent2). 
+ **/
 pub fn from_dic(
     sents: &[(Sent, Sent)],
     vocab1: &Vocab,
@@ -139,6 +164,47 @@ pub fn from_dic(
                         tgt_probs[pos1] /= sum;
                     }
                 }
+            }
+        }
+    }
+
+    scores
+}
+
+/**
+ * Weighted merge of two soft alignments. Panic checks on dimensionality fit.
+ **/
+pub fn merge_sum(
+    alignment1: &[AlgnSoft],
+    alignment2: &[AlgnSoft],
+    weight1: f32,
+) -> Vec<Vec<Vec<f32>>> {
+    let weight2 = 1.0 - weight1;
+    assert_eq!(alignment1.len(), alignment2.len());
+    let mut scores = alignment1
+        .iter()
+        .zip(alignment2)
+        .map(|(sent_a1, sent_a2)| {
+            vec![
+                vec![
+                    0.0;
+                    {
+                        assert_eq!(sent_a1[0].len(), sent_a2[0].len());
+                        sent_a2[0].len()
+                    }
+                ];
+                {
+                    assert_eq!(sent_a1.len(), sent_a2.len());
+                    sent_a1.len()
+                }
+            ]
+        })
+        .collect::<Vec<AlgnSoft>>();
+
+    for (sent_i, (sent_a1, sent_a2)) in alignment1.iter().zip(alignment2).enumerate() {
+        for (pos2, (tgtprobs1, tgtprobs2)) in sent_a1.iter().zip(sent_a2).enumerate() {
+            for (pos1, (prob1, prob2)) in tgtprobs1.iter().zip(tgtprobs2).enumerate() {
+                scores[sent_i][pos2][pos1] = weight1 * prob1 + weight2 * prob2;
             }
         }
     }

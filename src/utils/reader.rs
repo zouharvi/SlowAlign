@@ -11,11 +11,15 @@ pub type VocabRev = HashMap<usize, String>;
 pub type Sent = Vec<usize>;
 pub type SentText = Vec<String>;
 
-pub fn load(
+/**
+ * Loads parallel data from two files. Interval of sentences can be specified.
+ **/
+pub fn load_file(
     file1: &str,
     file2: &str,
     start: usize,
     count: usize,
+    lowercase: bool,
 ) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
     let reader1 = BufReader::new(File::open(&file1).unwrap());
     let reader2 = BufReader::new(File::open(&file2).unwrap());
@@ -24,8 +28,12 @@ pub fn load(
     let mut vocab2 = HashMap::<String, usize>::new();
 
     for (line1, line2) in reader1.lines().zip(reader2.lines()).skip(start).take(count) {
-        let line1 = line1.unwrap();
-        let line2 = line2.unwrap();
+        let mut line1 = line1.unwrap();
+        let mut line2 = line2.unwrap();
+        if lowercase {
+            line1 = line1.to_lowercase();
+            line2 = line2.to_lowercase();
+        }
         let tokens1 = line1
             .split_whitespace()
             .map(|token| {
@@ -46,14 +54,34 @@ pub fn load(
     (sents, (vocab1, vocab2))
 }
 
-pub fn load_all(file1: &str, file2: &str) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
-    load(file1, file2, 0, usize::MAX)
+/**
+ * Loads parallel data from two files. All sentences are taken.
+ **/
+pub fn load_file_all(
+    file1: &str,
+    file2: &str,
+    lowercase: bool,
+) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
+    load_file(file1, file2, 0, usize::MAX, lowercase)
 }
 
-pub fn load_sent(sents1: &str, sents2: &str) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
+/**
+ * Loads parallel data from the provided strings (usually from the command line).
+ **/
+pub fn load_sent(
+    sents1: &str,
+    sents2: &str,
+    lowercase: bool,
+) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
     let mut sents = Vec::<(Vec<usize>, Vec<usize>)>::new();
     let mut vocab1 = HashMap::<String, usize>::new();
     let mut vocab2 = HashMap::<String, usize>::new();
+    let mut sents1 = sents1.to_owned();
+    let mut sents2 = sents2.to_owned();
+    if lowercase {
+        sents1 = sents1.to_lowercase();
+        sents2 = sents2.to_lowercase();
+    }
     let reader1 = sents1.split('\n').collect::<Vec<&str>>();
     let reader2 = sents2.split('\n').collect::<Vec<&str>>();
 
@@ -78,6 +106,9 @@ pub fn load_sent(sents1: &str, sents2: &str) -> (Vec<(Sent, Sent)>, (Vocab, Voca
     (sents, (vocab1, vocab2))
 }
 
+/**
+ * Loads gold annotations. Sure alignments are separated with `-`, while possible with `?`.
+ **/
 pub fn load_gold(file: &str, substract_one: bool) -> Vec<AlgnGold> {
     let reader = BufReader::new(File::open(&file).unwrap());
     let mut algns = Vec::<AlgnGold>::new();
@@ -115,7 +146,10 @@ pub fn load_gold(file: &str, substract_one: bool) -> Vec<AlgnGold> {
     algns
 }
 
-pub fn load_word_probs(file: String) -> (Vec<Vec<f32>>, (Vocab, Vocab)) {
+/**
+ * Loads pre-trained word translation probabilities (dic).
+ **/
+pub fn load_word_probs(file: String, lowercase: bool) -> (Vec<Vec<f32>>, (Vocab, Vocab)) {
     let reader = BufReader::new(File::open(&file).unwrap());
     let mut vocab1 = HashMap::<String, usize>::new();
     let mut vocab2 = HashMap::<String, usize>::new();
@@ -124,10 +158,16 @@ pub fn load_word_probs(file: String) -> (Vec<Vec<f32>>, (Vocab, Vocab)) {
     for line in reader.lines() {
         let line = line.unwrap();
         let tokens = line.split_whitespace().collect::<Vec<&str>>();
+        let mut w1 = tokens[2].to_string();
+        let mut w2 = tokens[3].to_string();
+        if lowercase {
+            w1 = w1.to_lowercase();
+            w2 = w2.to_lowercase();
+        }
         let len1 = vocab1.len();
-        let w1_i = vocab1.entry(tokens[2].to_string()).or_insert(len1);
+        let w1_i = vocab1.entry(w1).or_insert(len1);
         let len2 = vocab2.len();
-        let w2_i = vocab2.entry(tokens[3].to_string()).or_insert(len2);
+        let w2_i = vocab2.entry(w2).or_insert(len2);
         let prob = tokens[1].parse::<f32>().unwrap();
         word_probs_raw.push((prob, *w1_i, *w2_i));
     }
@@ -140,11 +180,14 @@ pub fn load_word_probs(file: String) -> (Vec<Vec<f32>>, (Vocab, Vocab)) {
     (word_probs, (vocab1, vocab2))
 }
 
-pub fn load_data(opts: &OptsMain) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
+/**
+ * Loads parallel data either from two files or from the command line.
+ **/
+pub fn load_data(opts: &OptsMain, lowercase: bool) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
     if let (Some(file1), Some(file2)) = (&opts.file1, &opts.file2) {
-        load_all(file1, file2)
+        load_file_all(file1, file2, lowercase)
     } else if let (Some(sent1), Some(sent2)) = (&opts.sent1, &opts.sent2) {
-        load_sent(sent1, sent2)
+        load_sent(sent1, sent2, lowercase)
     } else {
         panic!("Either two files or two sentences have to be provided")
     }

@@ -14,16 +14,20 @@ const GOLD_DEV_COUNT: usize = 20;
 
 use utils::{cli::OptsMain, evaluator, reader};
 
+/**
+ * This binary is used for alignment of new data and exploring the parameter space.
+ **/
 fn main() {
     let opts = OptsMain::parse();
+    let (sents, (vocab1, vocab2)) = reader::load_data(&opts, opts.lowercase);
 
-    let (sents, (vocab1, vocab2)) = reader::load_data(&opts);
-
+    // Compute the overall alignment based on the supplied method
     let alignment = match opts.method.as_str() {
         "dic" => {
             let (dic, (dic_vocab1, dic_vocab2)) = reader::load_word_probs(
                 opts.dic
                     .expect("Path to word translation probability file has to be provided."),
+                opts.lowercase,
             );
 
             let package = AlignmentPackage {
@@ -52,7 +56,7 @@ fn main() {
                 &optimizer::EXTRACTOR_RECIPES,
             )
         }
-        "static" => align_hard::a1_argmax(&align_soft::merge_sum(
+        "static" => align_hard::a1_argmax(&align_soft::misc::merge_sum(
             &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
             &align_soft::misc::diagonal(&sents),
             0.4,
@@ -102,13 +106,14 @@ fn main() {
         _ => panic!("Unknown method"),
     };
 
+    // Print AER if gold alignments were supplied
     if let Some(file) = opts.gold {
         let alignment_eval = reader::load_gold(&file, opts.gold_substract_one);
         let aer = alignment_error_rate(&alignment, &alignment_eval);
         eprintln!("AER {}\n", aer);
     };
 
-    // print alignments
+    // Finally output the alignments
     for sent_align in alignment {
         println!(
             "{}",

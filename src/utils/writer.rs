@@ -3,6 +3,10 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 
+/**
+ * Write word translation probabilities to a file. The form is similar to the one found in OPUS,
+ * except only the first four columns are considered, with the first one taking a dummy `0` value.
+ **/
 pub fn write_dict(
     file: String,
     word_probs: &[Vec<f32>],
@@ -27,6 +31,10 @@ pub fn write_dict(
     }
 }
 
+
+/**
+ * Reverse vocabulary so that indicies can be used to retrieve the string.
+ **/
 pub fn vocab_rev(vocab: &Vocab) -> VocabRev {
     vocab
         .iter()

@@ -3,6 +3,9 @@ pub mod evaluator;
 pub mod reader;
 pub mod writer;
 
+/**
+ * Generate a cartesian product of multiple vectors.
+ **/
 pub fn cartesian_product<T>(lists: &[Vec<T>]) -> Vec<Vec<T>>
 where
     T: Clone,
@@ -29,6 +32,23 @@ where
     res
 }
 
+/**
+ * Transpose a matrix (vector of vectors).
+ **/
+pub fn transpose<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>>
+where
+    T: Clone,
+{
+    assert!(!v.is_empty());
+    (0..v[0].len())
+        .map(|i| v.iter().map(|inner| inner[i].clone()).collect::<Vec<T>>())
+        .collect()
+}
+
+
+/**
+ * Wrap every element in a singleton vector.
+ **/
 pub fn pack<T>(range: &[T]) -> Vec<Vec<T>>
 where
     T: Copy,
@@ -36,8 +56,14 @@ where
     range.iter().map(|x| vec![*x]).collect()
 }
 
+/**
+ * Generate a linear space given interval boundaries and number of steps.
+ **/
 pub fn linspace(start: f32, end: f32, steps: usize) -> Vec<f32> {
     if steps <= 1 {
+        if start != end {
+            panic!("In case of number of steps less or equal to 1, the start and end has to match.")
+        }
         return vec![start];
     }
     (0..steps)
@@ -45,10 +71,9 @@ pub fn linspace(start: f32, end: f32, steps: usize) -> Vec<f32> {
         .collect::<Vec<f32>>()
 }
 
-pub fn noparam() -> Vec<f32> {
-    vec![0.0]
-}
-
+/**
+ * Compute levenstein distance of two words.
+ **/
 pub fn levenstein_distance(word1: &str, word2: &str) -> f32 {
     let w1 = word1.chars().collect::<Vec<_>>();
     let w2 = word2.chars().collect::<Vec<_>>();
@@ -79,12 +104,14 @@ pub fn levenstein_distance(word1: &str, word2: &str) -> f32 {
     matrix[word2_length - 1][word1_length - 1] as f32
 }
 
-pub fn transpose<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>>
-where
-    T: Clone,
-{
-    assert!(!v.is_empty());
-    (0..v[0].len())
-        .map(|i| v.iter().map(|inner| inner[i].clone()).collect::<Vec<T>>())
-        .collect()
+/**
+ * Compute the argmax of a vector.
+ **/
+pub fn argmax(probs: &[f32]) -> usize {
+    probs
+        .iter()
+        .enumerate()
+        .max_by(|(_, value0), (_, value1)| value0.partial_cmp(value1).unwrap())
+        .map(|(idx, _)| idx)
+        .unwrap()
 }

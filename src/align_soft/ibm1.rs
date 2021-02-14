@@ -5,6 +5,11 @@ use std::collections::HashMap;
 const E_THREADS: usize = 4;
 const M_THREADS: usize = 4;
 
+/**
+ * A very simple alignment based on IBM Model 1 (without NULL tokens).
+ * Returns alignment probabilities. For translation probabilities see ibm1_raw.
+ * Vocabularies are provided for their dimensionality.
+ **/
 pub fn ibm1(
     sents: &[(Vec<usize>, Vec<usize>)],
     vocab1: &HashMap<String, usize>,
@@ -13,6 +18,11 @@ pub fn ibm1(
     ibm1_raw(sents, vocab1, vocab2).0
 }
 
+/**
+ * A very simple alignment based on IBM Model 1 (without NULL tokens).
+ * Returns alignment probabilities together with wordtranslation probabilities.
+ * Vocabularies are provided for their dimensionality.
+ **/
 pub fn ibm1_raw(
     sents: &[(Vec<usize>, Vec<usize>)],
     vocab1: &HashMap<String, usize>,

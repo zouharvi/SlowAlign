@@ -1,14 +1,9 @@
+use crate::utils::argmax;
 use crate::evaluator::{AlgnHard, AlgnSoft};
 
-fn argmax(probs: &[f32]) -> usize {
-    probs
-        .iter()
-        .enumerate()
-        .max_by(|(_, value0), (_, value1)| value0.partial_cmp(value1).unwrap())
-        .map(|(idx, _)| idx)
-        .unwrap()
-}
-
+/**
+ * Extracts the argmax from the target side.
+ **/
 pub fn a1_argmax(alignment_probs: &[AlgnSoft]) -> Vec<AlgnHard> {
     alignment_probs
         .iter()
@@ -22,6 +17,9 @@ pub fn a1_argmax(alignment_probs: &[AlgnSoft]) -> Vec<AlgnHard> {
         .collect()
 }
 
+/**
+ * Extracts all alignments with a score of at least some threshold.
+ **/
 pub fn a2_threshold(alignment_probs: &[AlgnSoft], threshold: f32) -> Vec<AlgnHard> {
     alignment_probs
         .iter()
@@ -43,6 +41,10 @@ pub fn a2_threshold(alignment_probs: &[AlgnSoft], threshold: f32) -> Vec<AlgnHar
         .collect()
 }
 
+/**
+ * Extracts all alignments with a score of at least a multiple of the best one on the source side.
+ * Treatment for negative scores is not implemented (panic).
+ **/
 pub fn a4_threshold_dynamic(alignment_probs: &[AlgnSoft], alpha: f32) -> Vec<AlgnHard> {
     alignment_probs
         .iter()
@@ -52,7 +54,7 @@ pub fn a4_threshold_dynamic(alignment_probs: &[AlgnSoft], alpha: f32) -> Vec<Alg
                 .enumerate()
                 .map(|(pos2, src_probs)| {
                     let threshold = alpha * src_probs.iter().cloned().fold(f32::NAN, f32::max);
-
+                    assert!(threshold >= 0.0);
                     src_probs
                         .iter()
                         .enumerate()
@@ -66,6 +68,10 @@ pub fn a4_threshold_dynamic(alignment_probs: &[AlgnSoft], alpha: f32) -> Vec<Alg
         .collect()
 }
 
+/**
+ * Extracts all alignments with a score of at least a multiple of the best one on the target side.
+ * Treatment for negative scores is not implemented (panic).
+ **/
 pub fn a3_threshold_dynamic(alignment_probs: &[AlgnSoft], alpha: f32) -> Vec<AlgnHard> {
     alignment_probs
         .iter()
@@ -82,6 +88,7 @@ pub fn a3_threshold_dynamic(alignment_probs: &[AlgnSoft], alpha: f32) -> Vec<Alg
                 .enumerate()
                 .map(|(pos1, tgt_probs)| {
                     let threshold = alpha * tgt_probs.iter().cloned().fold(f32::NAN, f32::max);
+                    assert!(threshold >= 0.0);
 
                     tgt_probs
                         .iter()

@@ -14,6 +14,9 @@ pub enum AlgnMergeAction {
     INTERSECT,
 }
 
+/**
+ * Intersect hard alignments.
+ **/
 pub fn intersect_algn(running: Option<Vec<AlgnHard>>, new: Vec<AlgnHard>) -> Option<Vec<AlgnHard>> {
     if let Some(running) = running {
         Some(
@@ -32,6 +35,9 @@ pub fn intersect_algn(running: Option<Vec<AlgnHard>>, new: Vec<AlgnHard>) -> Opt
     }
 }
 
+/**
+ * Join hard alignments
+ **/
 pub fn join_algn(running: Option<Vec<AlgnHard>>, new: Vec<AlgnHard>) -> Option<Vec<AlgnHard>> {
     if let Some(running) = running {
         Some(
@@ -50,6 +56,9 @@ pub fn join_algn(running: Option<Vec<AlgnHard>>, new: Vec<AlgnHard>) -> Option<V
     }
 }
 
+/**
+ * Compute hard alignment given the necessary precomputed package, the extractor list and the parameters
+ **/
 pub fn params_to_alignment<T>(
     params: &[Vec<T>],
     package: &AlignmentPackage,
@@ -70,6 +79,9 @@ pub fn params_to_alignment<T>(
     running_algn.unwrap()
 }
 
+/**
+ * Perform (slow) grid search.
+ **/
 pub fn gridsearch<T>(
     package: &AlignmentPackage,
     extractor_params: &[Vec<Vec<T>>],
@@ -114,6 +126,9 @@ where
     (best_algn.unwrap(), best_params.unwrap(), min_aer)
 }
 
+/**
+ * Struct to hold pre-computed soft alignments used for extractors.
+ **/
 pub struct AlignmentPackage<'a> {
     pub alignment_fwd: &'a [AlgnSoft],
     pub alignment_rev: &'a [AlgnSoft],
@@ -121,6 +136,9 @@ pub struct AlignmentPackage<'a> {
     pub alignment_lev: &'a [AlgnSoft],
 }
 
+/**
+ * Set of extractor recipes used in the gridsearch and the inference.
+ **/
 pub const EXTRACTOR_RECIPES: &[(AlgnMergeAction, Extractor<f32>)] = &[
     (
         AlgnMergeAction::INTERSECT,
@@ -169,6 +187,9 @@ pub const EXTRACTOR_RECIPES: &[(AlgnMergeAction, Extractor<f32>)] = &[
     ),
 ];
 
+/**
+ * Parameter space for the extractor recipes.
+ **/
 pub fn extractor_recipes_params() -> Vec<Vec<Vec<f32>>> {
     vec![
         pack(&linspace(0.0, 0.05, 2)),
