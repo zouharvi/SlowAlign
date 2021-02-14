@@ -1,7 +1,6 @@
 # SlowAlign
 
-Word aligner written in Rust with a few extra features, most notably heuristic parameter supervised gridsearch estimation.
-
+Word aligner written in Rust with a few extra features, most notably (1) heuristic parameter estimation in a supervised fashion using gridsearch, (2) combination of multiple soft alignments and (3) data-less alignment based on diagonal alignment, levenstein distance and bluring. See [REPORT.md](REPORT.md) for further description.
 
 # SlowAlignDisplayer
 
