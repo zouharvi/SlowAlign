@@ -23,6 +23,7 @@ fn main() {
                 opts.dic
                     .expect("Path to word translation probability file has to be provided."),
             );
+
             let package = AlignmentPackage {
                 alignment_fwd: &align_soft::misc::from_dic(
                     &sents,
@@ -44,17 +45,9 @@ fn main() {
                 alignment_lev: &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
             };
             optimizer::params_to_alignment(
-                &[
-                    vec![0.0],
-                    vec![0.0],
-                    vec![0.1],
-                    vec![0.6],
-                    vec![0.0, 0.2],
-                    vec![0.1],
-                    vec![0.9],
-                ],
+                &opts.params.data,
                 &package,
-                &optimizer::extractor_recipes,
+                &optimizer::EXTRACTOR_RECIPES,
             )
         }
         "static" => align_hard::a1_argmax(&align_soft::merge_sum(
@@ -95,7 +88,7 @@ fn main() {
             let (algn, params, _aer) = optimizer::gridsearch(
                 &package,
                 &optimizer::extractor_recipes_params(),
-                &optimizer::extractor_recipes,
+                &optimizer::EXTRACTOR_RECIPES,
                 &alignment_dev,
             );
             algn

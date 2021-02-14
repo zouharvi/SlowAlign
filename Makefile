@@ -5,4 +5,7 @@ encs_word_probs:
 	cargo run --release --bin slow_align_word_probs -- data/data_encs.en data/data_encs.cs data/data_encs.dic --threshold 0.1
 
 encs_dic:
-	cargo run --release --bin slow_align -- --sent1 "The right focuses on efficiency ." --sent2 "Pravice se zaměřuje na efektivitu ." --dic data/data_encs.dic --method dic
+	cargo run --release --bin slow_align -- \
+	--sent1 "The right focuses on efficiency ." --sent2 "Pravice se zaměřuje na efektivitu ." \
+	--dic data/data_encs.dic --method dic \
+	--params "[0.0],[0.0],[1.0],[0.8],[0.0,0.1],[0.95],[0.8]"

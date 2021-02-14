@@ -5,7 +5,7 @@ use std::io::prelude::*;
 
 pub fn write_dict(
     file: String,
-    word_probs: &Vec<Vec<f32>>,
+    word_probs: &[Vec<f32>],
     vocab1: &Vocab,
     vocab2: &Vocab,
     threshold: f32,
@@ -21,7 +21,7 @@ pub fn write_dict(
         for (w1_i, prob) in w1_vec.iter().enumerate() {
             let w1 = vocab1rev.get(&w1_i).unwrap();
             if *prob >= threshold {
-                write!(&mut file, "0\t{}\t{}\t{}\n", prob, w1, w2);
+                write!(&mut file, "0\t{}\t{}\t{}\n", prob, w1, w2).unwrap();
             }
         }
     }

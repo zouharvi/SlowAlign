@@ -119,7 +119,7 @@ pub struct AlignmentPackage<'a> {
     pub alignment_lev: &'a [AlgnSoft],
 }
 
-pub const extractor_recipes: &[(
+pub const EXTRACTOR_RECIPES: &[(
     AlgnMergeAction,
     &'static dyn Fn(&[f32], &AlignmentPackage) -> Vec<AlgnHard>,
 )] = &[

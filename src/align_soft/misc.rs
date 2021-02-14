@@ -1,5 +1,5 @@
 use crate::evaluator::AlgnSoft;
-use crate::reader::{Sent, SentText, Vocab};
+use crate::reader::{Sent, Vocab};
 use crate::utils::{levenstein_distance, transpose, writer};
 
 pub fn levenstein(sents: &[(Sent, Sent)], vocab1: &Vocab, vocab2: &Vocab) -> Vec<AlgnSoft> {
@@ -79,7 +79,7 @@ pub fn from_dic_rev(
     sents: &[(Sent, Sent)],
     vocab1: &Vocab,
     vocab2: &Vocab,
-    dic: &Vec<Vec<f32>>,
+    dic: &[Vec<f32>],
     dic_vocab1: &Vocab,
     dic_vocab2: &Vocab,
 ) -> Vec<AlgnSoft> {
@@ -91,7 +91,7 @@ pub fn from_dic_rev(
         sents_rev,
         vocab2,
         vocab1,
-        &transpose(dic.clone()),
+        &transpose(dic.to_owned()),
         dic_vocab2,
         dic_vocab1,
     )
@@ -101,7 +101,7 @@ pub fn from_dic(
     sents: &[(Sent, Sent)],
     vocab1: &Vocab,
     vocab2: &Vocab,
-    dic: &Vec<Vec<f32>>,
+    dic: &[Vec<f32>],
     dic_vocab1: &Vocab,
     dic_vocab2: &Vocab,
 ) -> Vec<AlgnSoft> {
