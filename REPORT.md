@@ -9,7 +9,7 @@ output: pdf_document
 ---
 
 
-The main functionalities of SlowAlign are (1) heuristic parameter estimation in a supervised fashion using gridsearch, (2) combination of multiple soft alignments and (3) data-less alignment based on diagonal alignment, levenstein distance and bluring.
+The main functionalities of SlowAlign are (1) heuristic parameter estimation in a supervised fashion using gridsearch, (2) combination of multiple soft alignments and (3) data-less alignment based on diagonal alignment, levenstein distance and bluring. The project is hosted at [github.com/zouharvi/SlowAlign](https://github.com/zouharvi/SlowAlign/).
 
 This report is split into the following sections:
 
@@ -20,7 +20,46 @@ This report is split into the following sections:
 
 ## System Description
 
+The system is currently composed of two parts: [SlowAlign-Dic](#SlowAlign-Dic) and [SlowAlign-Main][#SlowAlign-Main].
+
+### SlowAlign Dic
+
+A viable way to align one sentence pair `(test_s0, test_t0)` given that we already have large parallel corpus `{(train_s0, train_t0), (train_s1, train_t1), ..)}` is to simply add the test sentence pair to the training data and run the unsupervised alignment algorithm again:
+
+```
+test_s0  ||| test_t0
+train_s0 ||| train_t0
+train_s1 ||| train_t1
+...
+```
+
+This however does not scale well, especially if the user is interested in online usage of the alignment (data come in sequentially and not in batches). To alleviate this, it is possible to simply store the word translation probabilities (output of the Expectation step in IBM1) and load them at inference time. The results will not be similar as in the first case (the presence of the test sentence can influence the outcome of the training algorithm), but the changes may be considered negligible and in general this makes it possible to deploy and expect reasonable runtime. The tool `fast_align` also has this feature, though undocummented.
+
+Another advantage is that one can re-use pretrained word translation probabilities of other systems. Namely [OPUS](https://opus.nlpl.eu/) provides a great variety of such pre-trained word translation dictionaries (_dic_). The second column is the translation probability, the third is the source token and the last column is the target token. The first column is the number of occurences together. An example from Ubuntu v14.10 (de -> en), further columns omitted:
+
+```
+...
+2	0.117647058823529	Abmeldeknopf     logout	  
+5	0.192307692307692	Abmelden         Log Out	  
+7	0.181818181818182	Abmelden         logout	  
+3	0.113207547169811	Abmelden         Log out	  
+5	0.0980392156862745	Abmelden         logging	  
+2	0.0727272727272727	Abmelden         Logout	  
+2	0.114285714285714	Abmeldeoption    logout	  
+4	0.363636363636364	Abmessungen      Dimensions
+5	0.27027027027027	Abmessungen      dimensions
+...
+```
+
+Storing the whole translation matrix would lead to |V|x|V| number of entries, which is undesirable, especially for word pairs with translation probability close to 0. We therefore need to decide a threshold by which we decide if a given pair of words is to be stored or not.
+
+SlowAlign-dic simply takes in two files of sentences to be aligned, the mentioned threshold and outputs the word translation dictionary (first column contains a dummy value, as it is not used). For word translation proability estimation, IBM1 model without NULL tokens is used. See [Appendix A](#Appendix-A) for further usage information of SlowAlign-dic (binary is called `slow_align_dic`).
+
+### SlowAlign Main
+
 TODO
+
+(binary is simply `slow_align`)
 
 ## Baseline Evaluation
 

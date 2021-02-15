@@ -1,14 +1,14 @@
 encs_search:
 	cargo run --release --bin slow_align -- \
 	--file1 data/data_encs.en --file2 data/data_encs.cs \
-	--gold data/data_encs.algn --method search --gold-substract-one \
-	--lowercase \
+	--gold data/data_encs.algn --method search --gold-index-one \
+	--lowercase --gold-dev-count 20 \
 	1> /dev/null
 
 encs_static:
 	cargo run --release --bin slow_align -- \
 	--file1 data/data_encs.en --file2 data/data_encs.cs \
-	--gold data/data_encs.algn --method static --gold-substract-one \
+	--gold data/data_encs.algn --method static --gold-index-one \
 	--lowercase \
 	1> /dev/null
 

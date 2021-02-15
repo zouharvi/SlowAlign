@@ -12,13 +12,11 @@ pub type Sent = Vec<usize>;
 pub type SentText = Vec<String>;
 
 /**
- * Loads parallel data from two files. Interval of sentences can be specified.
+ * Loads parallel data from two files.
  **/
 pub fn load_file(
     file1: &str,
     file2: &str,
-    start: usize,
-    count: usize,
     lowercase: bool,
 ) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
     let reader1 = BufReader::new(File::open(&file1).unwrap());
@@ -27,7 +25,7 @@ pub fn load_file(
     let mut vocab1 = HashMap::<String, usize>::new();
     let mut vocab2 = HashMap::<String, usize>::new();
 
-    for (line1, line2) in reader1.lines().zip(reader2.lines()).skip(start).take(count) {
+    for (line1, line2) in reader1.lines().zip(reader2.lines()) {
         let mut line1 = line1.unwrap();
         let mut line2 = line2.unwrap();
         if lowercase {
@@ -52,17 +50,6 @@ pub fn load_file(
     }
 
     (sents, (vocab1, vocab2))
-}
-
-/**
- * Loads parallel data from two files. All sentences are taken.
- **/
-pub fn load_file_all(
-    file1: &str,
-    file2: &str,
-    lowercase: bool,
-) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
-    load_file(file1, file2, 0, usize::MAX, lowercase)
 }
 
 /**
@@ -185,7 +172,7 @@ pub fn load_word_probs(file: String, lowercase: bool) -> (Vec<Vec<f32>>, (Vocab,
  **/
 pub fn load_data(opts: &OptsMain, lowercase: bool) -> (Vec<(Sent, Sent)>, (Vocab, Vocab)) {
     if let (Some(file1), Some(file2)) = (&opts.file1, &opts.file2) {
-        load_file_all(file1, file2, lowercase)
+        load_file(file1, file2, lowercase)
     } else if let (Some(sent1), Some(sent2)) = (&opts.sent1, &opts.sent2) {
         load_sent(sent1, sent2, lowercase)
     } else {

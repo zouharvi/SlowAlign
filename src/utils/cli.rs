@@ -83,7 +83,7 @@ pub struct OptsMain {
         long,
         about = "Treat gold alignments as if they are 1-indexed (default is 0-indexed)"
     )]
-    pub gold_one_index: bool,
+    pub gold_index_one: bool,
     #[clap(
         short,
         long,
@@ -96,6 +96,16 @@ pub struct OptsMain {
         about = "Treat everything case-insensitive (default is case-sensitive, even though that provides slightly worse performance)."
     )]
     pub lowercase: bool,
+    #[clap(
+        long,
+        about = "Number of sentences (from the top) to use for parameter estimation."
+    )]
+    pub gold_dev_count: Option<usize>,
+    #[clap(
+        long,
+        about = "Produce output (and evaluation) on all data, not just the complement to the dev set."
+    )]
+    pub evaluate_all: bool,
 }
 
 /**

@@ -61,6 +61,7 @@ where
  **/
 pub fn linspace(start: f32, end: f32, steps: usize) -> Vec<f32> {
     if steps <= 1 {
+        #[allow(clippy::float_cmp)]
         if start != end {
             panic!("In case of number of steps less or equal to 1, the start and end has to match.")
         }
