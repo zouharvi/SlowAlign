@@ -30,6 +30,8 @@ pub fn ibm1(
      vocab2: &HashMap<String, usize>,
      steps: usize,
 ) -> (Vec<AlgnSoft>, Vec<Vec<f32>>) {
+    eprintln!("Computing IBM1");
+
     let mut alignment_probs = sents
         .iter()
         .map(|(s1, s2)| vec![vec![1.0 / (s1.len() as f32); s1.len()]; s2.len()])

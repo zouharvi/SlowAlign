@@ -197,7 +197,7 @@ pub fn extractor_recipes_params() -> Vec<Vec<Vec<f32>>> {
         pack(&linspace(0.95, 1.0, 4)),
         pack(&linspace(0.4, 0.8, 5)),
         cartesian_product(&[linspace(0.0, 0.2, 3), linspace(0.1, 0.3, 8)]),
-        pack(&linspace(0.95, 1.0, 4)),
+        pack(&linspace(0.90, 1.0, 6)),
         pack(&linspace(0.7, 1.0, 4)),
     ]
 }

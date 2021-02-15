@@ -1,12 +1,14 @@
 use crate::evaluator::AlgnSoft;
 use crate::reader::{Sent, Vocab};
-use crate::utils::{levenstein_distance, transpose, writer};
+use crate::utils::{levenstein_score, transpose, writer};
 
 /**
  * Soft alignment based on levenstein distance between token forms:
  * 1 - lev(x,y)/(|x|+|y|)
  **/
 pub fn levenstein(sents: &[(Sent, Sent)], vocab1: &Vocab, vocab2: &Vocab) -> Vec<AlgnSoft> {
+    eprintln!("Computing levenstein distance");
+
     let vocab1rev = writer::vocab_rev(vocab1);
     let vocab2rev = writer::vocab_rev(vocab2);
 
@@ -19,9 +21,7 @@ pub fn levenstein(sents: &[(Sent, Sent)], vocab1: &Vocab, vocab2: &Vocab) -> Vec
             let word1_str = vocab1rev.get(word1).unwrap();
             for (pos2, word2) in sent2.iter().enumerate() {
                 let word2_str = vocab2rev.get(word2).unwrap();
-                scores[sent_i][pos2][pos1] = 1.0
-                    - levenstein_distance(word1_str, word2_str)
-                        / ((word1_str.len() + word2_str.len()) as f32);
+                scores[sent_i][pos2][pos1] = levenstein_score(word1_str, word2_str);
             }
         }
     }
@@ -34,6 +34,8 @@ pub fn levenstein(sents: &[(Sent, Sent)], vocab1: &Vocab, vocab2: &Vocab) -> Vec
  * 1 - ||x|/|X| - |y|/|Y||
  **/
 pub fn diagonal(sents: &[(Sent, Sent)]) -> Vec<AlgnSoft> {
+    eprintln!("Computing diagonals");
+
     let mut scores = sents
         .iter()
         .map(|(s1, s2)| vec![vec![0.0; s1.len()]; s2.len()])
@@ -120,7 +122,7 @@ pub fn from_dic_rev(
 
 /**
  * Creates soft alignment from pre-trained word translation probabilities.
- * Normalized from target token (sent2). 
+ * Normalized from target token (sent2).
  **/
 pub fn from_dic(
     sents: &[(Sent, Sent)],

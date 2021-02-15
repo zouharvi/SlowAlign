@@ -45,7 +45,6 @@ where
         .collect()
 }
 
-
 /**
  * Wrap every element in a singleton vector.
  **/
@@ -75,34 +74,39 @@ pub fn linspace(start: f32, end: f32, steps: usize) -> Vec<f32> {
 /**
  * Compute levenstein distance of two words.
  **/
-pub fn levenstein_distance(word1: &str, word2: &str) -> f32 {
+pub fn levenstein_distance(word1: &str, word2: &str) -> usize {
     let w1 = word1.chars().collect::<Vec<_>>();
     let w2 = word2.chars().collect::<Vec<_>>();
-    let word1_length = w1.len() + 1;
-    let word2_length = w2.len() + 1;
-    let mut matrix = vec![vec![0]];
+    let mut matrix = vec![vec![0; w1.len() + 1]; w2.len() + 1];
 
-    for i in 1..word1_length {
-        matrix[0].push(i);
+    for i in 0..w1.len() {
+        matrix[0][i + 1] = i + 1;
     }
-    for j in 1..word2_length {
-        matrix.push(vec![j]);
+    for j in 0..w2.len() {
+        matrix[j + 1][0] = j + 1;
     }
 
-    for j in 1..word2_length {
-        for i in 1..word1_length {
-            let x: usize = if w1[i - 1] == w2[j - 1] {
-                matrix[j - 1][i - 1]
+    for j in 0..w2.len() {
+        for i in 0..w1.len() {
+            matrix[j + 1][i + 1] = if w1[i] == w2[j] {
+                matrix[j][i]
             } else {
                 1 + std::cmp::min(
-                    std::cmp::min(matrix[j][i - 1], matrix[j - 1][i]),
-                    matrix[j - 1][i - 1],
+                    std::cmp::min(matrix[j + 1][i], matrix[j][i + 1]),
+                    matrix[j][i],
                 )
             };
-            matrix[j].push(x);
         }
     }
-    matrix[word2_length - 1][word1_length - 1] as f32
+    matrix[w2.len()][w1.len()]
+}
+
+/**
+ * Computes normalized [0..1] score based on word similarity using the levenstein distance.
+ * 0 - words dissimiliar, 1 - words identical
+ */
+pub fn levenstein_score(word1: &str, word2: &str) -> f32 {
+    1.0 - (levenstein_distance(word1, word2) as f32) / ((word1.len() + word2.len()) as f32)
 }
 
 /**

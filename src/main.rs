@@ -58,7 +58,7 @@ fn main() {
         "static" => align_hard::a1_argmax(&align_soft::misc::merge_sum(
             &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
             &align_soft::misc::diagonal(&sents),
-            0.4,
+            0.5,
         )),
         "levenstein" => align_hard::a2_threshold(
             &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
@@ -90,15 +90,14 @@ fn main() {
                 .collect::<Vec<(Sent, Sent)>>();
 
             let package = AlignmentPackage {
-                alignment_fwd: &align_soft::ibm1::ibm1(&sents, &vocab1, &vocab2, opts.ibm_steps),
-                alignment_rev: &align_soft::ibm1::ibm1(
-                    &sents_rev,
-                    &vocab2,
-                    &vocab1,
-                    opts.ibm_steps,
-                ),
-                alignment_diag: &align_soft::misc::diagonal(&sents),
-                alignment_lev: &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
+                alignment_fwd: 
+                    &align_soft::ibm1::ibm1(&sents, &vocab1, &vocab2, opts.ibm_steps)
+                ,
+                alignment_rev: 
+                    &align_soft::ibm1::ibm1(&sents_rev, &vocab2, &vocab1, opts.ibm_steps)
+                ,
+                alignment_diag:  &align_soft::misc::diagonal(&sents) ,
+                alignment_lev:  &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
             };
             let package_dev = AlignmentPackage {
                 alignment_fwd: &package.alignment_fwd[..dev_count],
