@@ -1,3 +1,4 @@
+use crate::utils::transpose;
 use crate::utils::argmax;
 use crate::evaluator::{AlgnHard, AlgnSoft};
 
@@ -42,6 +43,36 @@ pub fn a2_threshold(alignment_probs: &[AlgnSoft], threshold: f32) -> Vec<AlgnHar
 }
 
 /**
+ * Extracts all alignments with a score of at least a multiple of the best one on the target side.
+ * Treatment for negative scores is not implemented (panic).
+ **/
+pub fn a3_threshold_dynamic(alignment_probs: &[AlgnSoft], alpha: f32) -> Vec<AlgnHard> {
+    alignment_probs
+        .iter()
+        .map(|sent_prob| {
+            let sent_prob_rev = transpose(sent_prob);
+            
+            sent_prob_rev
+                .iter()
+                .enumerate()
+                .map(|(pos1, tgt_probs)| {
+                    let threshold = alpha * tgt_probs.iter().cloned().fold(f32::NAN, f32::max);
+                    assert!(threshold >= 0.0);
+
+                    tgt_probs
+                        .iter()
+                        .enumerate()
+                        .filter(|(_pos2, prob)| **prob >= threshold)
+                        .map(|(pos2, _)| (pos1, pos2))
+                        .collect::<Vec<(usize, usize)>>()
+                })
+                .flatten()
+                .collect()
+        })
+        .collect()
+}
+
+/**
  * Extracts all alignments with a score of at least a multiple of the best one on the source side.
  * Treatment for negative scores is not implemented (panic).
  **/
@@ -60,41 +91,6 @@ pub fn a4_threshold_dynamic(alignment_probs: &[AlgnSoft], alpha: f32) -> Vec<Alg
                         .enumerate()
                         .filter(|(_pos1, prob)| **prob >= threshold)
                         .map(|(pos1, _)| (pos1, pos2))
-                        .collect::<Vec<(usize, usize)>>()
-                })
-                .flatten()
-                .collect()
-        })
-        .collect()
-}
-
-/**
- * Extracts all alignments with a score of at least a multiple of the best one on the target side.
- * Treatment for negative scores is not implemented (panic).
- **/
-pub fn a3_threshold_dynamic(alignment_probs: &[AlgnSoft], alpha: f32) -> Vec<AlgnHard> {
-    alignment_probs
-        .iter()
-        .map(|sent_prob| {
-            let mut sent_prob_rev = vec![vec![0.0; sent_prob.len()]; sent_prob[0].len()];
-            for (pos2, src_probs) in sent_prob.iter().enumerate() {
-                for (pos1, prob) in src_probs.iter().enumerate() {
-                    sent_prob_rev[pos1][pos2] = *prob;
-                }
-            }
-
-            sent_prob_rev
-                .iter()
-                .enumerate()
-                .map(|(pos1, tgt_probs)| {
-                    let threshold = alpha * tgt_probs.iter().cloned().fold(f32::NAN, f32::max);
-                    assert!(threshold >= 0.0);
-
-                    tgt_probs
-                        .iter()
-                        .enumerate()
-                        .filter(|(_pos2, prob)| **prob >= threshold)
-                        .map(|(pos2, _)| (pos1, pos2))
                         .collect::<Vec<(usize, usize)>>()
                 })
                 .flatten()

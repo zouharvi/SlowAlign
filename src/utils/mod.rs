@@ -35,7 +35,7 @@ where
 /**
  * Transpose a matrix (vector of vectors).
  **/
-pub fn transpose<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>>
+pub fn transpose<T>(v: &[Vec<T>]) -> Vec<Vec<T>>
 where
     T: Clone,
 {
@@ -74,6 +74,7 @@ pub fn linspace(start: f32, end: f32, steps: usize) -> Vec<f32> {
 /**
  * Compute levenstein distance of two words.
  **/
+ #[allow(clippy::needless_range_loop)]
 pub fn levenstein_distance(word1: &str, word2: &str) -> usize {
     let w1 = word1.chars().collect::<Vec<_>>();
     let w2 = word2.chars().collect::<Vec<_>>();

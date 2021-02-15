@@ -114,7 +114,7 @@ pub fn from_dic_rev(
         sents_rev,
         vocab2,
         vocab1,
-        &transpose(dic.to_owned()),
+        &transpose(&dic.to_owned()),
         dic_vocab2,
         dic_vocab1,
     )

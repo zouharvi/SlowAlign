@@ -4,7 +4,6 @@ use crate::linspace;
 use crate::pack;
 use crate::utils::cartesian_product;
 use crate::{align_hard, align_soft};
-use std::collections::HashSet;
 
 pub type Extractor<T> = &'static dyn Fn(&[T], &AlignmentPackage) -> Vec<AlgnHard>;
 
@@ -23,12 +22,8 @@ pub fn intersect_algn(running: Option<Vec<AlgnHard>>, new: Vec<AlgnHard>) -> Opt
             running
                 .iter()
                 .zip(new)
-                .map(|(old, new)| {
-                    old.intersection(&new)
-                        .copied()
-                        .collect::<HashSet<(usize, usize)>>()
-                })
-                .collect::<Vec<HashSet<(usize, usize)>>>(),
+                .map(|(old, new)| old.intersection(&new).copied().collect::<AlgnHard>())
+                .collect::<Vec<AlgnHard>>(),
         )
     } else {
         Some(new)
@@ -44,12 +39,8 @@ pub fn join_algn(running: Option<Vec<AlgnHard>>, new: Vec<AlgnHard>) -> Option<V
             running
                 .iter()
                 .zip(new)
-                .map(|(old, new)| {
-                    old.union(&new)
-                        .copied()
-                        .collect::<HashSet<(usize, usize)>>()
-                })
-                .collect::<Vec<HashSet<(usize, usize)>>>(),
+                .map(|(old, new)| old.union(&new).copied().collect::<AlgnHard>())
+                .collect::<Vec<AlgnHard>>(),
         )
     } else {
         Some(new)
@@ -62,10 +53,7 @@ pub fn join_algn(running: Option<Vec<AlgnHard>>, new: Vec<AlgnHard>) -> Option<V
 pub fn params_to_alignment<T>(
     params: &[Vec<T>],
     package: &AlignmentPackage,
-    extractors: &[(
-        AlgnMergeAction,
-        Extractor<T>,
-    )],
+    extractors: &[(AlgnMergeAction, Extractor<T>)],
 ) -> Vec<AlgnHard> {
     let mut running_algn: Option<Vec<AlgnHard>> = None;
 
@@ -85,10 +73,7 @@ pub fn params_to_alignment<T>(
 pub fn gridsearch<T>(
     package: &AlignmentPackage,
     extractor_params: &[Vec<Vec<T>>],
-    extractors: &[(
-        AlgnMergeAction,
-        Extractor<T>,
-    )],
+    extractors: &[(AlgnMergeAction, Extractor<T>)],
     gold_algn: &[AlgnGold],
 ) -> (Vec<AlgnHard>, Vec<Vec<T>>, f32)
 where
@@ -121,7 +106,8 @@ where
         }
     }
 
-    eprintln!("Best AER: {}, {:?}", min_aer, best_params.clone().unwrap());
+    eprintln!("Best AER: {}", min_aer);
+    eprintln!("Best Params: {:?}\n", best_params.clone().unwrap());
 
     (best_algn.unwrap(), best_params.unwrap(), min_aer)
 }
@@ -143,25 +129,22 @@ pub const EXTRACTOR_RECIPES: &[(AlgnMergeAction, Extractor<f32>)] = &[
     (
         AlgnMergeAction::INTERSECT,
         &|p: &[f32], package: &AlignmentPackage| {
-            align_hard::a2_threshold(package.alignment_fwd, p[0])
-        },
-    ),
-    (
-        AlgnMergeAction::INTERSECT,
-        &|p: &[f32], package: &AlignmentPackage| {
-            align_hard::a3_threshold_dynamic(package.alignment_fwd, p[0])
-        },
-    ),
-    (
-        AlgnMergeAction::INTERSECT,
-        &|p: &[f32], package: &AlignmentPackage| {
             align_hard::a4_threshold_dynamic(package.alignment_fwd, p[0])
         },
     ),
     (
         AlgnMergeAction::INTERSECT,
         &|p: &[f32], package: &AlignmentPackage| {
-            align_hard::a4_threshold_dynamic(package.alignment_diag, p[0])
+            alignment_reverse(&align_hard::a3_threshold_dynamic(
+                package.alignment_rev,
+                p[0],
+            ))
+        },
+    ),
+    (
+        AlgnMergeAction::INTERSECT,
+        &|p: &[f32], package: &AlignmentPackage| {
+            align_hard::a2_threshold(package.alignment_diag, p[0])
         },
     ),
     (
@@ -171,18 +154,15 @@ pub const EXTRACTOR_RECIPES: &[(AlgnMergeAction, Extractor<f32>)] = &[
         },
     ),
     (
-        AlgnMergeAction::INTERSECT,
-        &|p: &[f32], package: &AlignmentPackage| {
-            alignment_reverse(&align_hard::a4_threshold_dynamic(
-                package.alignment_rev,
-                p[0],
-            ))
-        },
-    ),
-    (
         AlgnMergeAction::JOIN,
         &|p: &[f32], package: &AlignmentPackage| {
             align_hard::a2_threshold(package.alignment_lev, p[0])
+        },
+    ),
+    (
+        AlgnMergeAction::INTERSECT,
+        &|p: &[f32], package: &AlignmentPackage| {
+            align_hard::a2_threshold(package.alignment_rev, p[0])
         },
     ),
 ];
@@ -192,12 +172,11 @@ pub const EXTRACTOR_RECIPES: &[(AlgnMergeAction, Extractor<f32>)] = &[
  **/
 pub fn extractor_recipes_params() -> Vec<Vec<Vec<f32>>> {
     vec![
-        pack(&linspace(0.0, 0.05, 2)),
-        pack(&linspace(0.0, 0.0, 1)),
         pack(&linspace(0.95, 1.0, 4)),
-        pack(&linspace(0.4, 0.8, 5)),
-        cartesian_product(&[linspace(0.0, 0.2, 3), linspace(0.1, 0.3, 8)]),
         pack(&linspace(0.90, 1.0, 6)),
+        pack(&linspace(0.1, 1.0, 10)),
+        cartesian_product(&[linspace(0.0, 0.05, 2), linspace(0.1, 0.3, 8)]),
         pack(&linspace(0.7, 1.0, 4)),
+        pack(&linspace(0.0, 0.005, 4)),
     ]
 }
