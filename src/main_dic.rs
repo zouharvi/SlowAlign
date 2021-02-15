@@ -19,6 +19,6 @@ fn main() {
     // @TODO: use load_data instead to allow for command line input
     let (sents, (vocab1, vocab2)) = reader::load_file(&opts.file1, &opts.file2, opts.lowercase);
 
-    let word_probs = &align_soft::ibm1::ibm1_raw(&sents, &vocab1, &vocab2).1;
+    let word_probs = &align_soft::ibm1::ibm1_raw(&sents, &vocab1, &vocab2, opts.ibm_steps).1;
     writer::write_dict(opts.out, word_probs, &vocab1, &vocab2, opts.threshold)
 }

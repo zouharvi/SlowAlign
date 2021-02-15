@@ -113,7 +113,7 @@ where
 
         let algn = params_to_alignment(&params, package, &extractors);
         let aer = alignment_error_rate(&algn, gold_algn);
-        eprintln!("AER {}, best {}\n", aer, min_aer);
+        eprintln!("AER {:.4}, best {:.4}\n", aer, min_aer);
         if aer < min_aer {
             best_params = Some(params);
             min_aer = aer;

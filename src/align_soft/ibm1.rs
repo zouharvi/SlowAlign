@@ -14,8 +14,9 @@ pub fn ibm1(
     sents: &[(Vec<usize>, Vec<usize>)],
     vocab1: &HashMap<String, usize>,
     vocab2: &HashMap<String, usize>,
+    steps: usize,
 ) -> Vec<AlgnSoft> {
-    ibm1_raw(sents, vocab1, vocab2).0
+    ibm1_raw(sents, vocab1, vocab2, steps).0
 }
 
 /**
@@ -23,10 +24,11 @@ pub fn ibm1(
  * Returns alignment probabilities together with wordtranslation probabilities.
  * Vocabularies are provided for their dimensionality.
  **/
-pub fn ibm1_raw(
-    sents: &[(Vec<usize>, Vec<usize>)],
-    vocab1: &HashMap<String, usize>,
-    vocab2: &HashMap<String, usize>,
+ pub fn ibm1_raw(
+     sents: &[(Vec<usize>, Vec<usize>)],
+     vocab1: &HashMap<String, usize>,
+     vocab2: &HashMap<String, usize>,
+     steps: usize,
 ) -> (Vec<AlgnSoft>, Vec<Vec<f32>>) {
     let mut alignment_probs = sents
         .iter()
@@ -39,7 +41,7 @@ pub fn ibm1_raw(
     let e_chunks: usize = sent_count / E_THREADS;
     let mut word_probs = vec![vec![]];
     // EM loop
-    for step in 0..5 {
+    for step in 0..steps {
         eprintln!("step {}", step);
 
         // expectation

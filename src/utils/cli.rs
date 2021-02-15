@@ -99,14 +99,20 @@ pub struct OptsMain {
     #[clap(
         long,
         about = "Number of sentences (from the top) to use for parameter estimation.",
-        default_value = "0",
+        default_value = "0"
     )]
     pub dev_count: usize,
     #[clap(
         long,
-        about = "Offset from which to evaluate data. If not supplied, use --dev-count value (so that dev and test do not overlap).",
+        about = "Offset from which to evaluate data. If not supplied, use --dev-count value (so that dev and test do not overlap)."
     )]
     pub test_offset: Option<usize>,
+    #[clap(
+        long,
+        default_value = "5",
+        about = "Number of steps to use for IBM1 computation."
+    )]
+    pub ibm_steps: usize,
 }
 
 /**
@@ -133,4 +139,6 @@ pub struct OptsDic {
         about = "Treat everything case-insensitive (default is case-sensitive, even though that provides slightly worse performance)."
     )]
     pub lowercase: bool,
+    #[clap(long, about = "Number of steps to use for IBM1 computation.")]
+    pub ibm_steps: usize,
 }

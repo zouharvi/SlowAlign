@@ -2,7 +2,7 @@ encs_search:
 	cargo run --release --bin slow_align -- \
 	--file1 data/data_encs.en --file2 data/data_encs.cs \
 	--gold data/data_encs.algn --method search --gold-index-one \
-	--lowercase --dev-count 20 \
+	--lowercase --dev-count 20 --ibm-steps 10 \
 	1> /dev/null
 
 encs_static:

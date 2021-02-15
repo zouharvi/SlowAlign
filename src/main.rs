@@ -64,7 +64,12 @@ fn main() {
             &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
             0.75,
         ),
-        "ibm1" => align_hard::a1_argmax(&align_soft::ibm1::ibm1(&sents, &vocab1, &vocab2)),
+        "ibm1" => align_hard::a1_argmax(&align_soft::ibm1::ibm1(
+            &sents,
+            &vocab1,
+            &vocab2,
+            opts.ibm_steps,
+        )),
         "search" => {
             let alignment_gold = &reader::load_gold(
                 &opts
@@ -85,8 +90,13 @@ fn main() {
                 .collect::<Vec<(Sent, Sent)>>();
 
             let package = AlignmentPackage {
-                alignment_fwd: &align_soft::ibm1::ibm1(&sents, &vocab1, &vocab2),
-                alignment_rev: &align_soft::ibm1::ibm1(&sents_rev, &vocab2, &vocab1),
+                alignment_fwd: &align_soft::ibm1::ibm1(&sents, &vocab1, &vocab2, opts.ibm_steps),
+                alignment_rev: &align_soft::ibm1::ibm1(
+                    &sents_rev,
+                    &vocab2,
+                    &vocab1,
+                    opts.ibm_steps,
+                ),
                 alignment_diag: &align_soft::misc::diagonal(&sents),
                 alignment_lev: &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
             };
