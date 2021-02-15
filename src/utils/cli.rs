@@ -98,14 +98,15 @@ pub struct OptsMain {
     pub lowercase: bool,
     #[clap(
         long,
-        about = "Number of sentences (from the top) to use for parameter estimation."
+        about = "Number of sentences (from the top) to use for parameter estimation.",
+        default_value = "0",
     )]
-    pub gold_dev_count: Option<usize>,
+    pub dev_count: usize,
     #[clap(
         long,
-        about = "Produce output (and evaluation) on all data, not just the complement to the dev set."
+        about = "Offset from which to evaluate data. If not supplied, use --dev-count value (so that dev and test do not overlap).",
     )]
-    pub evaluate_all: bool,
+    pub test_offset: Option<usize>,
 }
 
 /**

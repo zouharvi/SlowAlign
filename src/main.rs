@@ -74,7 +74,10 @@ fn main() {
                 opts.gold_index_one,
             );
 
-            let gold_dev_count = opts.gold_dev_count.expect("Number of sentences used for the parameter estimation (from the top) needs to be supplied.");
+            let dev_count = opts.dev_count;
+            if dev_count == 0 {
+                panic!("Can't do parameter estimation on zero sentences. Make sure to use --dev-count VALUE.")
+            }
 
             let sents_rev = sents
                 .iter()
@@ -88,16 +91,16 @@ fn main() {
                 alignment_lev: &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
             };
             let package_dev = AlignmentPackage {
-                alignment_fwd: &package.alignment_fwd[..gold_dev_count],
-                alignment_rev: &package.alignment_rev[..gold_dev_count],
-                alignment_diag: &package.alignment_diag[..gold_dev_count],
-                alignment_lev: &package.alignment_lev[..gold_dev_count],
+                alignment_fwd: &package.alignment_fwd[..dev_count],
+                alignment_rev: &package.alignment_rev[..dev_count],
+                alignment_diag: &package.alignment_diag[..dev_count],
+                alignment_lev: &package.alignment_lev[..dev_count],
             };
             let (_algn, params, _aer) = optimizer::gridsearch(
                 &package_dev,
                 &optimizer::extractor_recipes_params(),
                 &optimizer::EXTRACTOR_RECIPES,
-                &alignment_gold[..gold_dev_count],
+                &alignment_gold[..dev_count],
             );
             optimizer::params_to_alignment(&params, &package, &optimizer::EXTRACTOR_RECIPES)
         }
@@ -106,11 +109,7 @@ fn main() {
 
     // Print AER if gold alignments were supplied
     if let Some(file) = opts.gold {
-        let offset = if opts.evaluate_all {
-            0
-        } else {
-            opts.gold_dev_count.unwrap_or(0)
-        };
+        let offset = opts.test_offset.unwrap_or(opts.dev_count);
         let alignment_gold = reader::load_gold(&file, opts.gold_index_one);
         let aer = alignment_error_rate(&alignment[offset..], &alignment_gold[offset..]);
         eprintln!("AER {}\n", aer);
