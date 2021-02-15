@@ -12,3 +12,4 @@ data/*.dic
 nltk_experiment
 data/de-en.txt
 data/gumar*
+REPORT.pdf

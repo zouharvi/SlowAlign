@@ -72,7 +72,7 @@ fn main() {
                     .gold
                     .clone()
                     .expect("Gold alignment needs to be provided for gridsearch"),
-                opts.gold_substract_one,
+                opts.gold_one_index,
             );
 
             let sents_rev = sents
@@ -108,7 +108,7 @@ fn main() {
 
     // Print AER if gold alignments were supplied
     if let Some(file) = opts.gold {
-        let alignment_eval = reader::load_gold(&file, opts.gold_substract_one);
+        let alignment_eval = reader::load_gold(&file, opts.gold_one_index);
         let aer = alignment_error_rate(&alignment, &alignment_eval);
         eprintln!("AER {}\n", aer);
     };
