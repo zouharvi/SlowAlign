@@ -162,7 +162,7 @@ pub const EXTRACTOR_RECIPES: &[(AlgnMergeAction, Extractor<f32>)] = &[
     (
         AlgnMergeAction::INTERSECT,
         &|p: &[f32], package: &AlignmentPackage| {
-            align_hard::a2_threshold(package.alignment_rev, p[0])
+            align_hard::a2_threshold(package.alignment_fwd, p[0])
         },
     ),
 ];

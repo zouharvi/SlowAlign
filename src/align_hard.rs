@@ -34,7 +34,7 @@ pub fn a2_threshold(alignment_probs: &[AlgnSoft], threshold: f32) -> Vec<AlgnHar
                         .enumerate()
                         .filter(|(_pos1, prob)| **prob >= threshold)
                         .map(|(pos1, _)| (pos1, pos2))
-                        .collect::<Vec<(usize, usize)>>()
+                        .collect::<AlgnHard>()
                 })
                 .flatten()
                 .collect()
