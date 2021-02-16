@@ -14,15 +14,15 @@ The main functionalities of SlowAlign are (1) heuristic parameter estimation in 
 This report is split into the following sections:
 
 - [System Description](#System-Description): introduction to different components of SlowAlign together with the heuristics
-- [Baseline Evaluation](#Baseline-Evaluation): dataset overview and evaluation, esp. in comparison to `fast_align`
+- [Evaluation](#Evaluation): dataset overview and evaluation, esp. in comparison to `fast_align`
 - [Future Work](#Future-Work): list of further improvements
 - [Appendix A](#Appendix-A): technical details including building this project
 
-## System Description
+# System Description
 
-The system is currently composed of two parts: [SlowAlign-Dic](#SlowAlign-Dic) and [SlowAlign-Main][#SlowAlign-Main].
+The system is currently composed of two parts: [SlowAlign-Dic](##SlowAlign-Dic) and [SlowAlign-Main](##SlowAlign-Main).
 
-### SlowAlign Dic
+## SlowAlign Dic
 
 A viable way to align one sentence pair `(test_s0, test_t0)` given that we already have large parallel corpus `{(train_s0, train_t0), (train_s1, train_t1), ..)}` is to simply add the test sentence pair to the training data and run the unsupervised alignment algorithm again:
 
@@ -53,15 +53,49 @@ Another advantage is that one can re-use pretrained word translation probabiliti
 
 Storing the whole translation matrix would lead to |V|x|V| number of entries, which is undesirable, especially for word pairs with translation probability close to 0. We therefore need to decide a threshold by which we decide if a given pair of words is to be stored or not.
 
-SlowAlign-dic simply takes in two files of sentences to be aligned, the mentioned threshold and outputs the word translation dictionary (first column contains a dummy value, as it is not used). For word translation proability estimation, IBM1 model without NULL tokens is used. See [Appendix A](#Appendix-A) for further usage information of SlowAlign-dic (binary is called `slow_align_dic`).
+SlowAlign-dic simply takes in two files of sentences to be aligned, the mentioned threshold and outputs the word translation dictionary (first column contains a dummy value, as it is not used). For word translation proability estimation, IBM1 model without NULL tokens is used. See [Appendix A](#Appendix-A) for further usage information of SlowAlign-dic (binary `slow_align_dic`).
 
-### SlowAlign Main
+## SlowAlign Main
+
+The output of this component is always an alignment (0-indexed) of the input (either files or sentences passed through the CLI). Additional tasks may be performed, such as searching for optimal parameters or evaluating the performance when gold alignments are supplied. The stdout is always reserved for just the alignment. See [Appendix A](#Appendix-A) for detailed usage information of SlowAlign (binary `slow_align`).
+
+### Extractors
+
+Traditionally, word alignment consists of two parts: (1) soft alignment, which produces alignment scores and (2) induction of hard alignment, which produces the alignment itself from the scores. SlowAlign is espetially targeted to improve on the hard alignment. The soft alignment can be the intermediate representation in IBM models, but it can also be other metrics: attention energies, difference in word position in the sentence, levenstein distance, etc. 
+
+$\mathbf{A_1}$: In IBM Model 1, the hard alignment induction is done by an argmax from the target side: align every target token with the source token of the mutual higher alignment score. This makes a strong assumption that every target token is aligned to exactly one source token. Because of this, the IBM Model 1 also uses NULL tokens, so that a target word has the possibility to align itself to NULL.
+
+$\mathbf{A_2^\alpha}$: Even simpler approach is to consider every alignment with the score above some threshold. This makes this extractor parametrized by one value $\alpha$. In essence, the expressive power of this is higher than that of $A_1$, because it does not impose any restrictions on the number of alignments. This is at the cost of not considering the context of possible values for every target token.
+
+$\mathbf{A_3^\alpha}$: The threshold can also be set dynamically. For every source token $s$, compute the threshold as $\alpha \times max_t\{\text{score}(s,t)\}$ and  then take all alignments with score at least thsi value. The alpha values are bounded between $0$ - take everything and $1$ - take only the argmax (+every alignment with score equal to the maximum). Note: this can be further generalized to accomodate also negative scores by dividing instead of multiplying.
+
+$\mathbf{A_4^\alpha}$: The last extractor is equivalent to $\mathbf{A_3^\alpha}$ with the only difference of aggregating from the target side.
+
+**Combination**: Further improvements can be made by the combination of the two via set operations. Usually the union improves the recall, while the precision is improved by the intersection. For example, the semantics of $A_1 \cap A_2^\alpha$ would be: _align every target token to its maximum source counterpart, but with the rule of all scores begin above $\alpha$_. Finally, an extra improvement is to consider alignment from both directions. Note that for example the output of IBM Model 1 is not just the transpose of the output on switched parallel data, because the E-M algorithm does asymetric operations.
+
+The main formula used in SlowAlign is parametrized by 7 real values:
+
+$$
+\Big[
+\big[A_4^{\alpha_1}(\text{IBM}_\text{fwd}) \cap A_3^{\alpha_2}(\text{IBM}_\text{rev}) \cap A_2^{\alpha_3}(\text{diag}) \cap A_2^{\alpha_4}(\text{blur}^{\alpha_5}(\text{IBM}_\text{fwd})) \big]
+ \cup A_2^{\alpha_6}(\text{levenstein})
+\Big]
+\cap A_4^{\alpha_7}(\text{IBM}_\text{fwd})
+$$
+
+The soft alignments are the following:
+
+- $\text{IBM}_\text{fwd}$: IBM Model 1 without the NULL tokens.
+- $\text{IBM}_\text{rev}$: IBM Model 1 without the NULL tokens performed on switched data (target-source) and then transposed.
+- diag: Absolute value of relative positions in the sentence: $\big| \frac{i}{|S|} - \frac{j}{|T|}\big|$
+- levenstein: Levenstein distance of two words. This is useful for non-text tokens, such as interpunction, but can be also used for e.g. the alignment of post-edited  dialect to standard language.
+- blur: Applies blurring filter $[0, \alpha, 0], [\alpha, 1-4*\alpha, \alpha], [0, \alpha, 0]$ on inside nodes of the soft alignment. This is motivated by the fact, that if adjacent words have high scores to be aligned to the same target word, then the source word in the middle is also probably aligned to the same target word.  
+
+### Methods
 
 TODO
 
-(binary is simply `slow_align`)
-
-## Baseline Evaluation
+# Evaluation
 
 TODO
 
@@ -69,16 +103,16 @@ TODO
 
 TODO
 
-## Future Work
+# Future Work
 
 **Built-in http server:** Word alignment can be used in multiple scenarios. It can be useful for research purposes as a binary installed on a computer, but it is also necessary in some deployment scenarios. Furthermore, sharing an alignment service in a collaboration is easier than to manually send around parallel data to align or to learn to use a specific word alignment tool.
 The simplest solution would just accept the request and call the appropriate method from the main binary. This would be resource wasteful, since e.g. the word translation dictionary would have to be loaded from the filesystem (or cached in the memory by the OS) and parsed for every request (usually a pair of sentences). A solution to this would be to specify list of dictionaries to load when starting the server (more secure, but also more restrictive) or keep explicit cache of one most recently used dictionary. 
 
-**Gridsearch multithreading:** Currently, only the IBM soft alignment implementation is multithreaded (fixed to 4 threads), even though it is problematic and bottlenecked between the Expectation and Maximization steps. Inducing hard alignment using the recipes, is however a pure function which only needs a read access to  the soft alignment package. At the end, only the argmax needs to be extracted (parameters) together with the AER. Even though this does not influence all the use-cases and especially the inference scenario, it is possible to gain a multiplicative speedup determined solely by the number of cores (e.g. 8x).
+**Gridsearch multithreading:** Currently, only the IBM soft alignment implementation is multithreaded (fixed to 4 threads), even though it is problematic and bottlenecked between the Expectation and Maximization steps. Inducing hard alignment using the recipes, is however a pure function which only needs a read access to  the soft alignment package. At the end, only the argmax needs to be extracted (parameters) together with the AER. Even though this does not influence all the use-cases and especially the inference scenario, it is possible to gain a multiplicative speedup determined solely by the number of cores (e.g. 8x). This is also true for the levenstein computation.
 
 **Custom alignment score input:** It has been shown, that attention scores can be used for word alignment, especially if one of the attention heads is trained for this explicitly. Further improvements can be made if these scores are joined with other soft alignments. Main advantage is also the more complex hard alignment induction scheme. An MT practicioner who wishes to e.g. also present the word alignments next to the MT output may choose to send a request to SlowAlign together with their attention scores (and possibly other parameters) to get a better hard alignment.
 
-## Appendix A
+# Appendix A
 
 SlowAlign is written in Rust (1.50 in this report). For installation, please refer to the [official resources](https://www.rust-lang.org/tools/install). Assuming that `cargo` is in the path, the main binary can be run as: `cargo run --release --bin slow_align -- <arguments>`. The target binary is going to be stored in `target/release/slow_align`. To just build the binary and not run it, replace `run` with `build`. 
 

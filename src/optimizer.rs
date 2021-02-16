@@ -150,7 +150,7 @@ pub const EXTRACTOR_RECIPES: &[(AlgnMergeAction, Extractor<f32>)] = &[
     (
         AlgnMergeAction::INTERSECT,
         &|p: &[f32], package: &AlignmentPackage| {
-            align_hard::a2_threshold(&align_soft::misc::blur(package.alignment_fwd, p[0]), p[1])
+            align_hard::a2_threshold(&align_soft::misc::blur(package.alignment_fwd, p[1]), p[0])
         },
     ),
     (
@@ -175,7 +175,7 @@ pub fn extractor_recipes_params() -> Vec<Vec<Vec<f32>>> {
         pack(&linspace(0.95, 1.0, 4)),
         pack(&linspace(0.90, 1.0, 6)),
         pack(&linspace(0.1, 1.0, 10)),
-        cartesian_product(&[linspace(0.0, 0.05, 2), linspace(0.1, 0.3, 8)]),
+        cartesian_product(&[linspace(0.1, 0.3, 8), linspace(0.0, 0.005, 4)]),
         pack(&linspace(0.7, 1.0, 4)),
         pack(&linspace(0.0, 0.005, 4)),
     ]
