@@ -87,10 +87,9 @@ pub struct OptsMain {
     #[clap(
         short,
         long,
-        default_value = "[0.0],[0.0],[1.0],[0.8],[0.0,0.1],[0.95],[0.8]",
         about = "Comma-separated arrays of parameters to the estimator recipe"
     )]
-    pub params: ArgExtractorParams,
+    pub params: Option<ArgExtractorParams>,
     #[clap(
         long,
         about = "Treat everything case-insensitive (default is case-sensitive, even though that provides slightly worse performance)."

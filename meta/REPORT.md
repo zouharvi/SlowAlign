@@ -75,13 +75,14 @@ $\mathbf{A_4^\alpha}$: The last extractor is equivalent to $\mathbf{A_3^\alpha}$
 
 The main formula used in SlowAlign is parametrized by 7 real values:
 
-$$
-\Big[
+\begin{align*}
+& \mathbf{A_5^\alpha} = \\
+& \Big[
 \big[A_4^{\alpha_1}(\text{IBM}_\text{fwd}) \cap A_3^{\alpha_2}(\text{IBM}_\text{rev}) \cap A_2^{\alpha_3}(\text{diag}) \cap A_2^{\alpha_4}(\text{blur}^{\alpha_5}(\text{IBM}_\text{fwd})) \big]
  \cup A_2^{\alpha_6}(\text{levenstein})
 \Big]
 \cap A_4^{\alpha_7}(\text{IBM}_\text{fwd})
-$$
+\end{align*}
 
 The soft alignments are the following:
 
@@ -91,11 +92,43 @@ The soft alignments are the following:
 - levenstein: Levenstein distance of two words. This is useful for non-text tokens, such as interpunction, but can be also used for e.g. the alignment of post-edited  dialect to standard language.
 - blur: Applies blurring filter $[0, \alpha, 0], [\alpha, 1-4*\alpha, \alpha], [0, \alpha, 0]$ on inside nodes of the soft alignment. This is motivated by the fact, that if adjacent words have high scores to be aligned to the same target word, then the source word in the middle is also probably aligned to the same target word.  
 
+The parameters are specified in this format (square brackets mandatory): $[\alpha_1],[\alpha_2],[\alpha_3],[\alpha_4,\alpha_5],[\alpha_6],[\alpha_7]$. Default is `[0.0],[1.0],[0.8],[0.0,0.1],[0.95],[0.8]`.
+
+The gridsearch method searches the parameters in the following space. The behaviour of `linspace` is similar to the [one of NumPy](https://numpy.org/doc/stable/reference/generated/numpy.linspace.html) (endpoint included). This space is defined in `src/optimizer.rs`.  
+
+```
+linspace(0.95, 1.0, 4),
+linspace(0.90, 1.0, 6),
+linspace(0.1, 1.0, 10),
+cartesian_product([linspace(0.1, 0.3, 8), linspace(0.0, 0.005, 4)]),
+linspace(0.7, 1.0, 4),
+linspace(0.0, 0.005, 4),
+```
+
+\newpage
+
 ### Methods
+
+The following table lists methods available under the argument `--method` together with a minimum description. The methods were chosen to fill a specific requirement niche. Their top-level behavior is defined in `src/main.rs`.
+
+\renewcommand\arraystretch{1.5}  
+|Name|Comment|Extraction|Purpose|
+|:-|:-----|:--|:---|
+|`ibm1`|Standard IBM1 model (without NULL tokens).| argmax ($\mathbf{A_1})$|Baseline comparison to other methods.|
+|`levenstein`|Alignment score of two words is based on their levenstein distance: $1.0 - \frac{\text{lev}(s,t)}{|s|+|t|}$|threshold ($\mathbf{A_2}$)\newline default `[0.75]`|Lexical based approximation of alignment.|
+|`static`|Combination of diagonal alignment and levenstein. Soft alignment is the arithmetic average of levenstein distance and $\big|\frac{i}{|S|}-\frac{j}{|T|} \big|$. Default method of `slow_align`.|threshold ($\mathbf{A_2}$)\newline default `[0.5]`|Alignment of dialect and standardized language for which little data is available. (Used by a classmate.)|
+|`search`|Performs gridsearch over hardcoded subset of the possible values of $\alpha$. The (first) set of parameters with the lowest AER is then outputted. Parameters `--dev-count` controls how many sentences (from the top) are used for parametric estimation. For final evaluation, `--test-offset` determines from which sentence (until the end of supplied aligned sentences) to compute the final AER.|Searched space above. Defined in `src/optimizer.rs`.|Using small number of supervised examples to achieve better performance.|
+|`dic`|A combination of multiple soft alignments. Requires OPUS-like translation probability table passed by `--dic`. This table can be either downloaded from OPUS or trained using `slow_align_dic`.|$\mathbf{A_5}$ (formula above)\newline default above|Fast inference given the parameters of `search`.|
+\renewcommand\arraystretch{1}  
+
+
+Parameters have defaults which can be changed using the `--params` argument. Currently there is no mechanism nor typing system to enforce shape of the parameters. The structure is however invariant for every method and it can be observed from the defaults. Extra parameters will be ignored; not enough parameters will cause a panic.
+
+# Evaluation
 
 TODO
 
-# Evaluation
+## Datasets
 
 TODO
 

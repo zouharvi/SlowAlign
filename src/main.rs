@@ -3,6 +3,7 @@
 use crate::evaluator::alignment_error_rate;
 use crate::optimizer::AlignmentPackage;
 use crate::reader::Sent;
+use crate::utils::cli::ArgExtractorParams;
 use crate::utils::{linspace, pack};
 use clap::Clap;
 
@@ -50,7 +51,21 @@ fn main() {
                 alignment_lev: &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
             };
             optimizer::params_to_alignment(
-                &opts.params.data,
+                &opts
+                    .params
+                    .unwrap_or(ArgExtractorParams {
+                        // Default
+                        data: vec![
+                            vec![0.0],
+                            vec![0.0],
+                            vec![1.0],
+                            vec![0.8],
+                            vec![0.0, 0.1],
+                            vec![0.95],
+                            vec![0.8],
+                        ],
+                    })
+                    .data,
                 &package,
                 &optimizer::EXTRACTOR_RECIPES,
             )
@@ -58,11 +73,21 @@ fn main() {
         "static" => align_hard::a1_argmax(&align_soft::misc::merge_sum(
             &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
             &align_soft::misc::diagonal(&sents),
-            0.5,
+            opts.params
+                .unwrap_or(ArgExtractorParams {
+                    // Default
+                    data: vec![vec![0.5]],
+                })
+                .data[0][0],
         )),
         "levenstein" => align_hard::a2_threshold(
             &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
-            0.75,
+            opts.params
+                .unwrap_or(ArgExtractorParams {
+                    // Default
+                    data: vec![vec![0.75]],
+                })
+                .data[0][0],
         ),
         "ibm1" => align_hard::a1_argmax(&align_soft::ibm1::ibm1(
             &sents,
@@ -90,14 +115,15 @@ fn main() {
                 .collect::<Vec<(Sent, Sent)>>();
 
             let package = AlignmentPackage {
-                alignment_fwd: 
-                    &align_soft::ibm1::ibm1(&sents, &vocab1, &vocab2, opts.ibm_steps)
-                ,
-                alignment_rev: 
-                    &align_soft::ibm1::ibm1(&sents_rev, &vocab2, &vocab1, opts.ibm_steps)
-                ,
-                alignment_diag:  &align_soft::misc::diagonal(&sents) ,
-                alignment_lev:  &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
+                alignment_fwd: &align_soft::ibm1::ibm1(&sents, &vocab1, &vocab2, opts.ibm_steps),
+                alignment_rev: &align_soft::ibm1::ibm1(
+                    &sents_rev,
+                    &vocab2,
+                    &vocab1,
+                    opts.ibm_steps,
+                ),
+                alignment_diag: &align_soft::misc::diagonal(&sents),
+                alignment_lev: &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
             };
             let package_dev = AlignmentPackage {
                 alignment_fwd: &package.alignment_fwd[..dev_count],
