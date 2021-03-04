@@ -136,32 +136,28 @@ pub fn load_gold(file: &str, substract_one: bool) -> Vec<AlgnGold> {
 /**
  * Loads pre-trained word translation probabilities (dic).
  **/
-pub fn load_word_probs(file: String, lowercase: bool) -> (Vec<Vec<f32>>, (Vocab, Vocab)) {
+pub fn load_word_probs(file: String, lowercase: bool, switch_dic: bool) -> (HashMap<(usize,usize),f32>, (Vocab, Vocab)) {
     let reader = BufReader::new(File::open(&file).unwrap());
     let mut vocab1 = HashMap::<String, usize>::new();
     let mut vocab2 = HashMap::<String, usize>::new();
-    let mut word_probs_raw = Vec::<(f32, usize, usize)>::new();
+    let mut word_probs = HashMap::<(usize,usize),f32>::new();
+    let (pos_w1, pos_w2) = if switch_dic { (3,2) } else { (2,3) };
 
     for line in reader.lines() {
         let line = line.unwrap();
         let tokens = line.split_whitespace().collect::<Vec<&str>>();
-        let mut w1 = tokens[2].to_string();
-        let mut w2 = tokens[3].to_string();
+        let mut w1 = tokens[pos_w1].to_string();
+        let mut w2 = tokens[pos_w2].to_string();
         if lowercase {
             w1 = w1.to_lowercase();
             w2 = w2.to_lowercase();
         }
+        let prob = tokens[1].parse::<f32>().unwrap();
         let len1 = vocab1.len();
         let w1_i = vocab1.entry(w1).or_insert(len1);
         let len2 = vocab2.len();
         let w2_i = vocab2.entry(w2).or_insert(len2);
-        let prob = tokens[1].parse::<f32>().unwrap();
-        word_probs_raw.push((prob, *w1_i, *w2_i));
-    }
-
-    let mut word_probs = vec![vec![0.0; vocab1.len()]; vocab2.len()];
-    for (prob, w1_i, w2_i) in word_probs_raw {
-        word_probs[w2_i][w1_i] = prob;
+        word_probs.insert((*w1_i, *w2_i), prob);
     }
 
     (word_probs, (vocab1, vocab2))

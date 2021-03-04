@@ -28,6 +28,7 @@ fn main() {
                 opts.dic
                     .expect("Path to word translation probability file has to be provided."),
                 opts.lowercase,
+                opts.switch_dic
             );
 
             let package = AlignmentPackage {
@@ -38,14 +39,16 @@ fn main() {
                     &dic,
                     &dic_vocab1,
                     &dic_vocab2,
+                    false
                 ),
-                alignment_rev: &align_soft::misc::from_dic_rev(
+                alignment_rev: &align_soft::misc::from_dic(
                     &sents,
-                    &vocab1,
                     &vocab2,
+                    &vocab1,
                     &dic,
-                    &dic_vocab1,
                     &dic_vocab2,
+                    &dic_vocab1,
+                    true
                 ),
                 alignment_diag: &align_soft::misc::diagonal(&sents),
                 alignment_lev: &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),

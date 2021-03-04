@@ -4,7 +4,7 @@ author: |
         | Vilém Zouhar
         | <zouhar@ufal.mff.cuni.cz>
 date: February 2021
-geometry: margin=2.5cm
+geometry: margin=2.6cm
 output: pdf_document
 ---
 
@@ -17,6 +17,8 @@ This report is split into the following sections:
 - [Evaluation](#Evaluation): dataset overview and evaluation, esp. in comparison to `fast_align`
 - [Future Work](#Future-Work): list of further improvements
 - [Appendix A](#Appendix-A): technical details including building this project
+
+Compared to fast\_align, Slow Align provides competetive results and allows for more detailed manipulation.
 
 # System Description
 
@@ -36,6 +38,8 @@ train_s1 ||| train_t1
 This however does not scale well, especially if the user is interested in online usage of the alignment (data come in sequentially and not in batches). To alleviate this, it is possible to simply store the word translation probabilities (output of the Expectation step in IBM1) and load them at inference time. The results will not be similar as in the first case (the presence of the test sentence can influence the outcome of the training algorithm), but the changes may be considered negligible and in general this makes it possible to deploy and expect reasonable runtime. The tool `fast_align` also has this feature, though undocummented.
 
 Another advantage is that one can re-use pretrained word translation probabilities of other systems. Namely [OPUS](https://opus.nlpl.eu/) provides a great variety of such pre-trained word translation dictionaries (_dic_). The second column is the translation probability, the third is the source token and the last column is the target token. The first column is the number of occurences together. An example from Ubuntu v14.10 (de -> en), further columns omitted:
+
+\pagebreak
 
 ```
 ...
@@ -105,36 +109,90 @@ linspace(0.7, 1.0, 4),
 linspace(0.0, 0.005, 4),
 ```
 
-\newpage
 
 ### Methods
 
-The following table lists methods available under the argument `--method` together with a minimum description. The methods were chosen to fill a specific requirement niche. Their top-level behavior is defined in `src/main.rs`.
+The following table lists methods available under the argument `--method` together with a minimum description. The methods were chosen to fill a specific requirement niche. Their top-level behavior is defined in `src/main.rs`. Parameters have defaults which can be changed using the `--params` argument. Currently there is no mechanism nor typing system to enforce shape of the parameters. The structure is however invariant for every method and it can be observed from the defaults. Extra parameters will be ignored; not enough parameters will cause a panic.
 
-\renewcommand\arraystretch{1.5}  
+\newpage
+
+\renewcommand\arraystretch{1.8}  
 |Name|Comment|Extraction|Purpose|
 |:-|:-----|:--|:---|
 |`ibm1`|Standard IBM1 model (without NULL tokens).| argmax ($\mathbf{A_1})$|Baseline comparison to other methods.|
 |`levenstein`|Alignment score of two words is based on their levenstein distance: $1.0 - \frac{\text{lev}(s,t)}{|s|+|t|}$|threshold ($\mathbf{A_2}$)\newline default `[0.75]`|Lexical based approximation of alignment.|
-|`static`|Combination of diagonal alignment and levenstein. Soft alignment is the arithmetic average of levenstein distance and $\big|\frac{i}{|S|}-\frac{j}{|T|} \big|$. Default method of `slow_align`.|threshold ($\mathbf{A_2}$)\newline default `[0.5]`|Alignment of dialect and standardized language for which little data is available. (Used by a classmate.)|
+|`static`|Combination of diagonal alignment and levenstein. Soft alignment is the arithmetic average of levenstein distance and $\big|\frac{i}{|S|}-\frac{j}{|T|} \big|$. Default method of `slow_align`.|threshold ($\mathbf{A_2}$)\newline default `[0.4]`|Alignment between two dialects for which little data is available. (Used by a classmate.) This does not require any training.|
 |`search`|Performs gridsearch over hardcoded subset of the possible values of $\alpha$. The (first) set of parameters with the lowest AER is then outputted. Parameters `--dev-count` controls how many sentences (from the top) are used for parametric estimation. For final evaluation, `--test-offset` determines from which sentence (until the end of supplied aligned sentences) to compute the final AER.|Searched space above. Defined in `src/optimizer.rs`.|Using small number of supervised examples to achieve better performance.|
 |`dic`|A combination of multiple soft alignments. Requires OPUS-like translation probability table passed by `--dic`. This table can be either downloaded from OPUS or trained using `slow_align_dic`.|$\mathbf{A_5}$ (formula above)\newline default above|Fast inference given the parameters of `search`.|
 \renewcommand\arraystretch{1}  
 
-
-Parameters have defaults which can be changed using the `--params` argument. Currently there is no mechanism nor typing system to enforce shape of the parameters. The structure is however invariant for every method and it can be observed from the defaults. Extra parameters will be ignored; not enough parameters will cause a panic.
+\newpage
 
 # Evaluation
 
-TODO
-
 ## Datasets
 
-TODO
+There are three datasets used:
+
+- Czech-English [1] with 5000 aligned sentences. The last 1000 is used for test evaluation. The alignment is indexed by one, therefore use `--gold-index-one`
+- German-English [2] with 100 aligned sentences. Last 50 is used for test evaluation.
+- French-English [3] with 37 aligned sentences. Used solely for test evaluation.
+
+Since English is one side of each of them, this report refers to the datasets as Czech, German and French. In all cases, the whole data is visible to the system, but only the last X alignments.
+
+Furthermore, we use translation dictionaries made available by OPUS [5], namely Europarl v8, TildeMODEL v2018, DGT v2019 and EUBookshop v2. 
+
+## Performance
+
+The following table lists AER (percentage) of two Slow Align baselines (static, ibm1), best Slow Align (search, search + OPUS dic) all run with `--lowercase` and fast\_align [4] (default parameters `-dov`). Configurations can be run by manipulating `meta/evaluate{,dic}.sh`.
+
+|Method|Czech|German|French|
+|:-|:-:|:-:|:-:|
+|levenstein|63.4|63.8|50.7|
+|static|51.4|53.1|43.1|
+|ibm1|48.9T|66.0|31.1|
+|search|41.6 (41.5)|53.5 (43.2)|(16.8)|
+|dic|**36.0**|**28.4**|(19.2)|
+|fast\_align|38.9|51.0|18.5|
+
+Values in brackets mark AER on training data. Parameters for `dic` were chosen manually by performance on the training set (this could be done automatically, though the intended usage for `dic` is only fast inference). Even though this comparison looks promising to Slow Align, it is unfair, since Slow Align can make use of gold alignments and also translation probabilities from much larger corpora.
+
+These were the following parameters for `search` and `dic`:
+
+```
+search:
+Czech:   [0.95], [0.90], [0.7], [0.21, 0.0000], [0.70], [0.0050]
+German:  [0.95], [0.92], [0.9], [0.16, 0.0033], [0.70], [0.0017]
+French:  [1.00], [0.96], [0.7], [0.17, 0.0050], [0.80], [0.0033]
+
+dic:
+Czech:   [0.7], [0.20], [0.7], [0.10, 0.0001], [0.80], [0.0]
+German:  [0.5], [0.20], [0.7], [0.10, 0.0001], [0.98], [0.0]
+French:  [0.1], [0.29], [0.7], [0.08, 0.0001], [0.76], [0.0]
+```
+
+The `dic` configuration is heavily dependent (up to `+10` AER) on the data used. The data size: 3.1k vs 0.6M sentences for TildeMODEL and Europarl for Czech plays a major role. And simply the domain, since for French the data sizes were 5.1M and 2.1 for TildeMODEL and Europarl. In both cases (and also in comparison to DGT and EUBookshop), Europarl yielded consistently better results.
+
+## Parameter Transfer
+
+The previous results showed that different parameters are suited for each of the datasets. The following table simply runs the inference with parameters estimated from another language pair.
+
+|Transfer|AER|
+|:-|:-:|
+|German$\rightarrow$Czech|44.6|
+|French$\rightarrow$Czech|42.0|
+|Czech$\rightarrow$German|50.4|
+|French$\rightarrow$German|53.0|
+|Czech$\rightarrow$French|24.7|
+|German$\rightarrow$French|30.3|
+
+With the exception of German target, we can observe an expected drop in performance, though not unreasonably large (average `-6.2`). The fact that parameters estimated on Czech and French led to better performance on German than estimation on German suggests surprising dependence (even in this limited parameter space) on the data. An ablation study based on cross-validation would provide insight into the true performance of the models as well as statistical significance.
 
 ## Train Data Size
 
 TODO
+
+TODO comment runtime
 
 # Future Work
 
@@ -147,7 +205,7 @@ The simplest solution would just accept the request and call the appropriate met
 
 # Appendix A
 
-SlowAlign is written in Rust (1.50 in this report). For installation, please refer to the [official resources](https://www.rust-lang.org/tools/install). Assuming that `cargo` is in the path, the main binary can be run as: `cargo run --release --bin slow_align -- <arguments>`. The target binary is going to be stored in `target/release/slow_align`. To just build the binary and not run it, replace `run` with `build`. 
+SlowAlign is written in Rust (1.50 in this report). For installation, please refer to the [official resources](https://www.rust-lang.org/tools/install). Assuming that `cargo` is in the path, the main binary can be run as: `cargo run --release --bin slow_align -- <arguments>`. The target binary is going to be stored in `target/release/slow_align` (and can be run as `./target/release/slow_align <arguments>`). To just build the binary and not run it, replace `run` with `build`.
 
 Output of `slow_align --help`:
 
@@ -156,49 +214,61 @@ USAGE:
     slow_align [FLAGS] [OPTIONS]
 
 FLAGS:
-        --gold-one-index
+        --gold-index-one
             Treat gold alignments as if they are 1-indexed (default is 0-indexed)
 
     -h, --help
             Prints help information
 
         --lowercase
-            Treat everything case-insensitive (default is case-sensitive, even though that
-            provides slightly worse performance).
+            Treat everything case-insensitive (default is case-sensitive, even though that provides
+            slightly worse performance).
+
+        --switch-dic
+            Switch the columns for dictionaries, default (src, tgt).
 
     -V, --version
             Prints version information
 
 
 OPTIONS:
+        --dev-count <dev-count>
+            Number of sentences (from the top) to use for parameter estimation. [default: 0]
+
     -d, --dic <dic>
             OPUS-like dictionary of word translation probabilities
 
     -f, --file1 <file1>
-            Path to the source file to align. (If both files and sentences are provided,
-            only files are used).
+            Path to the source file to align. (If both files and sentences are provided, only files
+            are used).
 
     -f, --file2 <file2>
-            Path to the target file to align. (If both files and sentences are provided,
-            only files are used).
+            Path to the target file to align. (If both files and sentences are provided, only files
+            are used).
 
     -g, --gold <gold>
-            Path to the file with alignments (single space separated, x-y for sure alignments,
-            x?y for possible). `x` and `y` are (by default) 0-indexed token indicies.
+            Path to the file with alignments (single space separated, x-y for sure alignments, x?y
+            for possible). `x` and `y` are (by default) 0-indexed token indicies.
+
+        --ibm-steps <ibm-steps>
+            Number of steps to use for IBM1 computation. [default: 5]
 
     -m, --method <method>
-            Which alignment method pipeline to use (static, dic, levenstein, ibm1, search)
-            [default: static]
+            Which alignment method pipeline to use (static, dic, levenstein, ibm1, search) [default:
+            static]
 
     -p, --params <params>
             Comma-separated arrays of parameters to the estimator recipe
-            [default: [0.0],[0.0],[1.0],[0.8],[0.0,0.1],[0.95],[0.8]]
 
     -s, --sent1 <sent1>
             List of source sentences (separated by \n) to align.
 
     -s, --sent2 <sent2>
             List of target sentences (separated by \n) to align.
+
+        --test-offset <test-offset>
+            Offset from which to evaluate data. If not supplied, use --dev-count value (so that dev
+            and test do not overlap).
 ```
 
 &nbsp;
@@ -234,3 +304,16 @@ OPTIONS:
             Threshold under which translation probabilities will be omitted. Lower values
             lead to better approximation, but also larger file size. [default: 0.2]
 ```
+
+# References
+
+- [1] Mareček, D. (2011). Automatic Alignment of Tectogrammatical Trees from Czech-English Parallel Corpus.
+- [2] Biçici, M. E. (2011). The regression model of machine translation (Doctoral dissertation, Koç University).
+- [3] Original: Germann, U. (2001). Aligned hansards of the 36th parliament of canada.\newline \text{}\qquad Processed: <https://github.com/xutaima/jhu-mt-hw/tree/master/hw2/data>
+- [4] Chris Dyer, Victor Chahuneau, and Noah A. Smith. (2013). A Simple, Fast, and Effective Reparameterization of IBM Model 2. In Proc. of NAACL.
+- [5] Jörg Tiedemann, 2012, Parallel Data, Tools and Interfaces in OPUS. In Proceedings of the 8th International Conference on Language Resources and Evaluation (LREC'2012) \newline \text{} \qquad Namely: Europarl v8, TildeMODEL v2018, DGT v2019 and EUBookshop v2
+
+
+<!-- 
+cargo run --release --bin slow_align -- --file1 data/data_encs_s --file2 data/data_encs_t --gold data/data_encs_a --gold-index-one --params [0.2] > /dev/null
+-->

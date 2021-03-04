@@ -1,6 +1,7 @@
 use crate::evaluator::AlgnSoft;
 use crate::reader::{Sent, Vocab};
 use crate::utils::{levenstein_score, transpose, writer};
+use std::collections::HashMap;
 
 /**
  * Soft alignment based on levenstein distance between token forms:
@@ -102,7 +103,7 @@ pub fn from_dic_rev(
     sents: &[(Sent, Sent)],
     vocab1: &Vocab,
     vocab2: &Vocab,
-    dic: &[Vec<f32>],
+    dic: &HashMap<(usize, usize), f32>,
     dic_vocab1: &Vocab,
     dic_vocab2: &Vocab,
 ) -> Vec<AlgnSoft> {
@@ -110,14 +111,7 @@ pub fn from_dic_rev(
         .iter()
         .map(|(s1, s2)| (s2.clone(), s1.clone()))
         .collect::<Vec<(Sent, Sent)>>();
-    from_dic(
-        sents_rev,
-        vocab2,
-        vocab1,
-        &transpose(&dic.to_owned()),
-        dic_vocab2,
-        dic_vocab1,
-    )
+    from_dic(sents_rev, vocab2, vocab1, dic, dic_vocab2, dic_vocab1, true)
 }
 
 /**
@@ -128,33 +122,50 @@ pub fn from_dic(
     sents: &[(Sent, Sent)],
     vocab1: &Vocab,
     vocab2: &Vocab,
-    dic: &[Vec<f32>],
+    dic: &HashMap<(usize, usize), f32>,
     dic_vocab1: &Vocab,
     dic_vocab2: &Vocab,
+    dic_rev: bool,
 ) -> Vec<AlgnSoft> {
+    let sents = sents;
     let mut scores = sents
         .iter()
-        .map(|(sent1, sent2)| vec![vec![0.0; sent1.len()]; sent2.len()])
+        .map(|(sent1, sent2)| {
+            vec![
+                vec![0.0; if dic_rev { sent2.len() } else { sent1.len() }];
+                if dic_rev { sent1.len() } else { sent2.len() }
+            ]
+        })
         .collect::<Vec<AlgnSoft>>();
 
     let vocab1rev = writer::vocab_rev(vocab1);
     let vocab2rev = writer::vocab_rev(vocab2);
 
     for (sent_i, (sent1, sent2)) in sents.iter().enumerate() {
-        for (pos2, w2_i) in sent2.iter().enumerate() {
+        for (pos2, w2_i) in (if dic_rev { sent1 } else { sent2 }).iter().enumerate() {
             let w2 = vocab2rev.get(w2_i).unwrap();
-            for (pos1, w1_i) in sent1.iter().enumerate() {
+            for (pos1, w1_i) in (if dic_rev { sent2 } else { sent1 }).iter().enumerate() {
                 let w1 = vocab1rev.get(w1_i).unwrap();
                 scores[sent_i][pos2][pos1] = {
                     // set translation probability if both present in the dictionary
                     if dic_vocab2.contains_key(w2) && dic_vocab1.contains_key(w1) {
-                        dic[*dic_vocab2.get(w2).unwrap()][*dic_vocab1.get(w1).unwrap()]
+                        let dic_w1 = if dic_rev {
+                            *dic_vocab1.get(w1).unwrap()
+                        } else {
+                            *dic_vocab2.get(w2).unwrap()
+                        };
+                        let dic_w2 = if dic_rev {
+                            *dic_vocab2.get(w2).unwrap()
+                        } else {
+                            *dic_vocab1.get(w1).unwrap()
+                        };
+                        *dic.get(&(dic_w2, dic_w1)).unwrap_or(&0.0)
                     } else {
                         0.0
                     }
                 }
             }
-            for (pos1, _) in sent1.iter().enumerate() {
+            for (pos1, _) in (if dic_rev { sent2 } else { sent1 }).iter().enumerate() {
                 let sum = scores[sent_i]
                     .iter()
                     .map(|tgt_probs| tgt_probs[pos1])

@@ -73,6 +73,11 @@ pub struct OptsMain {
     )]
     pub dic: Option<String>,
     #[clap(
+        long,
+        about = "Switch the columns for dictionaries, default (src, tgt).",
+    )]
+    pub switch_dic: bool,
+    #[clap(
         short,
         long,
         default_value = "static",

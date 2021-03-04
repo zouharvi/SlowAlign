@@ -3,7 +3,7 @@ data/CzEnAli_1.0
 data/*_a
 data/*_s
 data/*_t
-data/*.dic
+data/dic/
 nltk_experiment
 data/de-en.txt
 data/gumar*
