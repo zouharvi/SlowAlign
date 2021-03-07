@@ -190,7 +190,9 @@ With the exception of German target, we can observe an expected drop in performa
 
 ## Train Data Size
 
-TODO
+Last two sections suggest that despite the very limited search space, the `search` method is dependent on training data size. Due to available data limitations we examine only German and Czech. The latter should have higher weight, since it contains 50x more data. In this specific setup, top-N training sentences are considered. This is very unstable and future works should refrain from this approach and insteaad perform cross validation.
+
+TODO: Czech data train
 
 TODO comment runtime
 

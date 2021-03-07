@@ -1,6 +1,6 @@
 use crate::evaluator::AlgnSoft;
 use crate::reader::{Sent, Vocab};
-use crate::utils::{levenstein_score, transpose, writer};
+use crate::utils::{levenstein_score, writer};
 use std::collections::HashMap;
 
 /**

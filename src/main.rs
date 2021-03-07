@@ -150,7 +150,7 @@ fn main() {
         let offset = opts.test_offset.unwrap_or(opts.dev_count);
         let alignment_gold = reader::load_gold(&file, opts.gold_index_one);
         let aer = alignment_error_rate(&alignment[offset..], &alignment_gold[offset..]);
-        eprintln!("AER {}\n", aer);
+        eprintln!("AER: {}\n", aer);
     };
 
     // Finally output the alignments
