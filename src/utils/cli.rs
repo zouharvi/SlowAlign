@@ -81,7 +81,7 @@ pub struct OptsMain {
         short,
         long,
         default_value = "static",
-        about = "Which alignment method pipeline to use (static, dic, levenstein, ibm1, search)"
+        about = "Which alignment method pipeline to use (static, dic, levenstein, ibm1, search, a5_fixed)"
     )]
     pub method: String,
     #[clap(

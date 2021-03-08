@@ -172,7 +172,7 @@ pub const EXTRACTOR_RECIPES: &[(AlgnMergeAction, Extractor<f32>)] = &[
  **/
 pub fn extractor_recipes_params() -> Vec<Vec<Vec<f32>>> {
     vec![
-        pack(&linspace(0.95, 0.95, 4)),
+        pack(&linspace(0.95, 1.0, 4)),
         pack(&linspace(0.90, 1.0, 6)),
         pack(&linspace(0.1, 1.0, 10)),
         cartesian_product(&[linspace(0.1, 0.3, 8), linspace(0.0, 0.005, 4)]),

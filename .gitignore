@@ -7,4 +7,5 @@ data/dic/
 nltk_experiment
 data/de-en.txt
 data/gumar*
-REPORT.pdf
+data/aers_size_deen
+data/aers_size_encs

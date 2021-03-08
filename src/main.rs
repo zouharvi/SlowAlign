@@ -28,7 +28,7 @@ fn main() {
                 opts.dic
                     .expect("Path to word translation probability file has to be provided."),
                 opts.lowercase,
-                opts.switch_dic
+                opts.switch_dic,
             );
 
             let package = AlignmentPackage {
@@ -39,7 +39,7 @@ fn main() {
                     &dic,
                     &dic_vocab1,
                     &dic_vocab2,
-                    false
+                    false,
                 ),
                 alignment_rev: &align_soft::misc::from_dic(
                     &sents,
@@ -48,7 +48,7 @@ fn main() {
                     &dic,
                     &dic_vocab2,
                     &dic_vocab1,
-                    true
+                    true,
                 ),
                 alignment_diag: &align_soft::misc::diagonal(&sents),
                 alignment_lev: &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
@@ -141,6 +141,29 @@ fn main() {
                 &alignment_gold[..dev_count],
             );
             optimizer::params_to_alignment(&params, &package, &optimizer::EXTRACTOR_RECIPES)
+        }
+        "a5_fixed" => {
+            let sents_rev = sents
+                .iter()
+                .map(|(x, y)| (y.clone(), x.clone()))
+                .collect::<Vec<(Sent, Sent)>>();
+
+            let package = AlignmentPackage {
+                alignment_fwd: &align_soft::ibm1::ibm1(&sents, &vocab1, &vocab2, opts.ibm_steps),
+                alignment_rev: &align_soft::ibm1::ibm1(
+                    &sents_rev,
+                    &vocab2,
+                    &vocab1,
+                    opts.ibm_steps,
+                ),
+                alignment_diag: &align_soft::misc::diagonal(&sents),
+                alignment_lev: &align_soft::misc::levenstein(&sents, &vocab1, &vocab2),
+            };
+            optimizer::params_to_alignment(
+                &opts.params.unwrap().data,
+                &package,
+                &optimizer::EXTRACTOR_RECIPES,
+            )
         }
         _ => panic!("Unknown method"),
     };

@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import argparse
 """
-TODO cite
+Adapted from hw2 of https://github.com/xutaima/jhu-mt-hw
 """
 
 parser = argparse.ArgumentParser(description='Process some integers.')
