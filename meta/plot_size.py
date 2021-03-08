@@ -28,7 +28,7 @@ with open(args.aers_file, 'r') as f:
     aers = [line.split() for line in f.readlines()]
     aers = [(int(x[0]), float(x[1])*100, float(x[2])*100) for x in aers]
     aers.sort(key=lambda x: x[0])
-    aers = [(5*i-200 if i >= 50 else i, x[0], x[1], x[2]) for i,x in enumerate(aers)]
+    aers = [(5*i-195 if i >= 50 else i, x[0], x[1], x[2]) for i,x in enumerate(aers)]
 
 points_tr = [x[2] for x in aers]
 points_ts = [x[3] for x in aers]
@@ -46,7 +46,7 @@ for (label, val, style) in transfer:
     plt.axhline(y = val, color = 'gray', linestyle = style, alpha=0.5, label=label) 
 plt.xlabel("Train data size")
 plt.ylabel("AER (lower is better)")
-plt.xticks(list(range(0,51,5))+[x[0] for x in aers if x[0] > 50], [max(i,1) for i in range(0,51,5)]+[x[1] for x in aers if x[0] > 50],rotation=45)
+plt.xticks(list(range(0,51,5))+[x[0] for x in aers if x[0] >= 50], [max(i,1) for i in range(0,51,5)]+[x[1] for x in aers if x[0] >= 50],rotation=45)
 plt.plot
 plt.legend()
 plt.title(title)

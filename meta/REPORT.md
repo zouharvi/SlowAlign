@@ -13,14 +13,14 @@ Word alignment is a well-established task, which found its use mostly in PBMT. T
 This report is split into the following sections:
 
 - [System Description](#System-Description): introduction to different components of SlowAlign together with the heuristics
-- [Evaluation](#Evaluation): dataset overview and evaluation, esp. in comparison to `fast_align`
+- [Evaluation](#Evaluation): dataset overview and evaluation, especially in comparison to `fast_align`
 - [Summary](#Summary): concludes this report and lists future work
 - [Appendix](#Appendix): technical details, including building this project
 
 \vspace*{-0.2cm}
 ### Word Alignment
 
-Traditionally, word alignment consists of two parts: (1) soft alignment, which produces alignment scores and (2) induction of hard alignment, which produces the discrete alignment itself from the scores. There are numerous strategies for the second step, _argmax_ and _threshold_ being the most intuitive and common one. These extractors can be parametrized by a single number (e.g. cut-off threshold). Usually, it is up to the user to experiment with different values and choose the best one. This becomes increasingly difficult as multiple extractors can be combined together (e.g. intersection) to produce a better one. Then, instead of having just one number to manipulate, it is now a whole vector.
+Traditionally, word alignment consists of two parts: (1) soft alignment, which produces alignment scores and (2) induction of hard alignment, which produces the discrete alignment itself from the scores. There are numerous strategies for the second step, _argmax_ and _threshold_ being the most intuitive and common ones. These extractors can be parametrized by a single number (e.g. cut-off threshold). Usually, it is up to the user to experiment with different values and choose the best one. This becomes increasingly difficult as multiple extractors can be combined together (e.g. intersection) to produce better performance. Then, instead of having just one number to manipulate, it is now a whole vector.
 
 SlowAlign aims to automate this process by performing gridsearch over a subspace of possible values given a train/dev dataset with gold alignment annotations. To that goal, it defines several other extractors and combines them together.
 
@@ -69,7 +69,7 @@ Another advantage is that one can re-use pretrained word translation probabiliti
 ...
 ```
 
-Storing the whole translation matrix would lead to |V|x|V| number of entries, which is undesirable, especially for word pairs with translation probability close to 0. We, therefore, need to decide a threshold by which we decide if a given pair of words is to be stored or not.
+Storing the whole translation matrix would lead to |V|x|V| number of entries, which is undesirable, especially for word pairs with translation probability close to 0. We, therefore, need to decide a threshold by which we determine if a given pair of words is to be stored or not.
 
 SlowAlign-dic simply takes in two files of sentences to be aligned, the mentioned threshold and outputs the word translation dictionary (the first column contains a dummy value, as it is not used). For word translation probability estimation, the IBM1 model without NULL tokens is used. See [Appendix](#Appendix) for further usage information of SlowAlign-dic (binary `slow_align_dic`).
 
@@ -126,27 +126,29 @@ linspace(0.0, 0.005, 4),
 
 The following table lists methods available under the argument `--method` together with a minimum description. The methods were chosen to fill a specific requirement niche. Their top-level behaviour is defined in `src/main.rs`. Parameters have defaults that can be changed using the `--params` argument. Currently, there is no mechanism nor typing system to enforce the shape of the parameters. The structure is, however, invariant for every method, and it can be observed from the defaults. Extra parameters will be ignored; not enough parameters will cause a panic.
 
-\renewcommand\arraystretch{1.8}  
+\renewcommand\arraystretch{1.6}  
 |Name|Comment|Extraction|Purpose|
 |:-|:-----|:--|:---|
 |`ibm1`|Standard IBM1 model (without NULL tokens). Default number of steps is 5.| argmax ($\mathbf{A_1})$|Baseline comparison to other methods.|
 |`levenstein`|Alignment score of two words is based on their Levenstein distance: $1.0 - \frac{\text{lev}(s,t)}{|s|+|t|}$|threshold ($\mathbf{A_2}$)\newline default `[0.75]`|Lexical based approximation of alignment.|
-|`static`|Combination of diagonal alignment and Levenstein. Soft alignment is the arithmetic average of Levenstein distance and $\big|\frac{i}{|S|}-\frac{j}{|T|} \big|$. Default method of `slow_align`.|threshold ($\mathbf{A_2}$)\newline default `[0.4]`|Alignment between two dialects for which little data is available. (Used by a classmate.) This does not require any training.|
+|`static`|Combination of diagonal alignment and Levenstein. Soft alignment is the arithmetic average of Levenstein distance and $\big|\frac{i}{|S|}-\frac{j}{|T|} \big|$. Default method of `slow_align`.|threshold ($\mathbf{A_2}$)\newline default `[0.4]`|Alignment between two dialects for which little data is available.\footnote{Added per request by a classmate, but still serves a great purpose as a training-less baseline.} This does not require any training.|
 |`search`|Performs gridsearch over a hardcoded subset of the possible values of $\alpha$. The (first) set of parameters with the lowest AER is then outputted. Parameters `--dev-count` controls how many sentences (from the top) are used for parametric estimation. For the final evaluation, `--test-offset` determines from which sentence (until the end of supplied aligned sentences) to compute the final AER.|Searched space above. Defined in `src/optimizer.rs`.|Using a small number of supervised examples to achieve better performance.|
 |`a5_fixed`|The same as `search`, only the `params` have to be provided.|$\mathbf{A_5}$ (above)\newline default above|Transfer testing.|
-|`dic`|A combination of multiple soft alignments. Requires OPUS-like translation probability table passed by `--dic`. This table can be either downloaded from OPUS or trained using `slow_align_dic`.|$\mathbf{A_5}$ (above)\newline default above|Fast inference given the parameters of `search`.|
+|`dic`\footnote{A similar feature is offered by fast\_align, though it is hidden in the code and is undocumented.}|A combination of multiple soft alignments. Requires OPUS-like translation probability table passed by `--dic`. This table can be either downloaded from OPUS or trained using `slow_align_dic`.|$\mathbf{A_5}$ (above)\newline default above|Fast inference given the parameters of `search`.|
 \renewcommand\arraystretch{1}  
 
+\vspace*{-0.3cm}
 ### Speed
 
 The following table lists runtimes measured once on Ryzen 7 3800x. It is debatable whether the parameter search in `search` is part of the training or whether it can be viewed as simply hyperparameters and `a5_fixed` should be measured. Despite its name, SlowAlign is currently slower by a tolerable margin, with bottlenecks (unparalleled Levenstein) clearly visible and improvable in future work.
 
+\vspace*{-0.1cm}
 |Method|Czech|German|French|
 |:-|:-:|:-:|:-:|
 |levenstein|1.2s|<0.1s|18.7s|
 |static|1.2s|<0.1s|19.5s|
 |ibm1|1.2s|<0.1s|8.9s|
-|search|5 hours|6 min|6.5 min|
+|search|8 hours|6 min|6.5 min|
 |dic|3.3s|0.2s|1 min|
 |fast\_align|1s|0.3s|8.6s|
 
@@ -168,7 +170,7 @@ Furthermore, we use translation dictionaries made available by OPUS [5], namely 
 
 ## Performance
 
-For measuring word alignment performance, Alignment Error Rate is used. Given hypothesis alignment $A$, sure gold alignments $S$ and possible gold alignments $P$, then $AER = \frac{|A\cap S|+|A\cap P|}{|A|+|S|}$. The following table lists AER (percentage) of two Slow Align baselines (static, ibm1), best Slow Align (search, search + OPUS dic) all run with `--lowercase` and fast\_align [4] (default parameters `-dov`). Configurations can be run by manipulating `meta/evaluate{,dic}.sh`.
+For measuring word alignment performance, Alignment Error Rate is used. Given hypothesis alignment $A$, sure gold alignments $S$ and possible gold alignments $P$, then $AER = \frac{|A\cap S|+|A\cap P|}{|A|+|S|}$. The following table lists AER (percentage) of three Slow Align baselines (levenstein, static, ibm1), best Slow Align (search + OPUS dic) all run with `--lowercase` and fast\_align [4] (default parameters `-dov`). Configurations can be run by manipulating `meta/evaluate{,dic}.sh`.
 
 |Method|Czech|German|French|
 |:-|:-:|:-:|:-:|
@@ -179,7 +181,7 @@ For measuring word alignment performance, Alignment Error Rate is used. Given hy
 |dic|**36.0**|**24.3**|(19.2)|
 |fast\_align|38.9|46.3|18.5|
 
-Values in brackets mark AER on training data. Parameters for `dic` were chosen manually by performance on the training set (this could be done automatically, though the intended usage for `dic` is only fast inference). Even though this comparison looks promising to Slow Align, it is unfair since Slow Align can make use of gold alignments and also translation probabilities from much larger corpora.
+Values in brackets mark AER on training data. Parameters for `dic` were chosen manually by performance on the training set (this could be done automatically, though the intended usage for `dic` is only fast inference). Even though this comparison looks promisingly good to Slow Align, it is unfair since Slow Align can make use of gold alignments and also translation probabilities from much larger corpora, while fast\_align is limited to only unsupervised parallel data in the given corpus.
 
 These were the following parameters for `search` and `dic`:
 
@@ -195,7 +197,7 @@ German:  [0.5], [0.20], [0.7], [0.10, 0.0001], [0.98], [0.0]
 French:  [0.1], [0.29], [0.7], [0.08, 0.0001], [0.76], [0.0]
 ```
 
-The `dic` configuration is heavily dependent (up to `+10` AER) on the data used. The data size: 3.1k vs 0.6M sentences for TildeMODEL and Europarl for Czech plays a major role. And simply the domain, since for French, the data sizes were 5.1M and 2.1M for TildeMODEL and Europarl. In both cases (and also in comparison to DGT and EUBookshop), Europarl yielded consistently better results.
+The `dic` configuration is heavily dependent (up to `+10` AER) on the data used. The performance is affected by the dictionary size and mostly by the domain. This is demonstrated by Europarl dictionary vastly outperforming TildeMODEL for Czech (0.6M vs 3.1k sentences). For German, the smaller in-domain dictionary of Europarl outperformed TildeMODEL (2M vs. 4.3M sentences). DGT and EUBookshop had lower performance in comparison to Europarl possibly due to either smaller size or unfitting domains.
 
 ## Parameter Transfer
 
@@ -224,7 +226,7 @@ The following two figures show the results. Only specific values are tested for 
 
 \text{}\hspace*{3.2cm}![](img/size_encs.png){width=390px}
 
-An immediately observable result is the high variability in the training performance. This may the result of the dataset being small, and for a full study, cross-validation should be used to determine the performance with better confidence (and also provide statistical significances). The expected behaviour would be (1) decreasing test AER (more training data provides a better estimate for the test distribution) and (2) increasing train AER (model "capacity" is being used up to fit more and more sentences). A trend for (1) can be observed in Czech (esp. for higher values) and (2) in German. A possible explanation is that the Czech dataset is more homogenous and more consistent in the alignments than German. Because of this, ``new'' sentences to the training dataset will have a similar optimal solution and, therefore, can even decrease the training data size.
+An immediately observable result is the high variability in the training performance. This may be the result of the dataset being small, and for a full study, cross-validation should be used to determine the performance with better confidence (and also provide statistical significances). The expected behaviour would be (1) decreasing test AER (more training data provides a better estimate for the test distribution) and (2) increasing train AER (model "capacity" is being used up to fit more and more sentences). A trend for (1) can be observed in Czech (especially for higher values) and (2) in German. A possible explanation is that the Czech dataset is more homogenous and more consistent in the alignments than German. Because of this, ``new'' sentences to the training dataset will have a similar optimal solution and, therefore, can even decrease the training data size.
 
 A conclusion from this evaluation is, that especially given the computational cost of gridsearch with larger training data, it is viable to use only small subset of them to get reasonable results.
 
@@ -255,7 +257,9 @@ The simplest solution would just accept the request and call the appropriate met
 
 # Appendix
 
-SlowAlign is written in Rust (1.50 in this report). For installation, please refer to the [official resources](https://www.rust-lang.org/tools/install). Assuming that `cargo` is in the path, the main binary can be run as: `cargo run --release --bin slow_align -- <arguments>`. The target binary is going to be stored in `target/release/slow_align` (and can be run as `./target/release/slow_align <arguments>`). To just build the binary and not run it, replace `run` with `build`. The rest of this appendix simply lists abbreviated help pages of `slow_align` and `slow_align_dic` binaries.
+SlowAlign is written in Rust (1.50 in this report). It is somewhat thinner (1378 LOC) compared to fast\_align (1726 LOC).
+
+For installation, please refer to the [official resources](https://www.rust-lang.org/tools/install). Assuming that `cargo` is in the path, the main binary can be run as: `cargo run --release --bin slow_align -- <arguments>`. The target binary is going to be stored in `target/release/slow_align` (and can be run as `./target/release/slow_align <arguments>`). To just build the binary and not run it, replace `run` with `build`. The rest of this appendix simply lists abbreviated help pages of `slow_align` and `slow_align_dic` binaries.
 
 ## Output of `slow_align -h`:
 
