@@ -160,11 +160,11 @@ The following table lists runtimes measured once on Ryzen 7 3800x. It is debatab
 
 There are three datasets used:
 
-- English-Czech [1] with 5000 aligned sentences. The last 250 is used for test evaluation. (shuffled, see `data/process_encs.sh`) The alignment is indexed by one, therefore use `--gold-index-one`.
+- English-Czech [1] with 5003 aligned sentences. The last 2503 is used for test evaluation. (shuffled, see `data/process_encs.sh`) The alignment is indexed by one, therefore use `--gold-index-one`.
 - German-English [2] with 100 aligned sentences. The last 50 is used for test evaluation. (shuffled, see `data/process_deen.sh`)
 - French-English [3] with 37 aligned sentences. Used solely for test evaluation.
 
-Since English is one side of each of them, this report refers to the datasets as Czech, German and French. In all cases, the whole data is visible to the system, but only the last X alignments.
+Since English is one side of each of them, this report refers to the datasets as Czech, German and French. In all cases, the whole data is visible to the system, but only the first {2500,50,0} alignments.
 
 Furthermore, we use translation dictionaries made available by OPUS [5], namely Europarl v8, TildeMODEL v2018, DGT v2019 and EUBookshop v2. 
 

@@ -1,6 +1,6 @@
 #!/bin/env bash
 
-# generate two files (data_encs_a and data_encs.sent) out of CzEnAli_1.0 dataset folder
+# Generate data_encs_{s,t,a} out of CzEnAli_1.0 dataset folder
 
 cat CzEnAli_1.0/data/**/*.wa | grep -e '<english>'  | sed -e 's/\s*<[^>]*>//g' > /tmp/text_s
 cat CzEnAli_1.0/data/**/*.wa | grep -e '<czech>'    | sed -e 's/\s*<[^>]*>//g' > /tmp/text_t

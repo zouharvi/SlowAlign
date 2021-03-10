@@ -1,5 +1,7 @@
 #!/bin/env bash
 
+# Generate data_deen_{s,t,a} out of existing copies (shuffling)
+
 cp data_deen_a /tmp/text_a
 cp data_deen_s /tmp/text_s
 cp data_deen_t /tmp/text_t
@@ -19,8 +21,8 @@ wait
 echo -n "Sentences: "
 cat /tmp/text_s | wc -l
 
-echo -n "Tokens CS: "
+echo -n "Tokens EN: "
 cat /tmp/text_t | tr " " "\n" | wc -l
 
-echo -n "Tokens EN: "
+echo -n "Tokens DE: "
 cat /tmp/text_s | tr " " "\n" | wc -l
